@@ -1,0 +1,3 @@
+#!/bin/bash
+sbt compile
+sbt stackoverflow_survey/run

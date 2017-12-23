@@ -22,7 +22,7 @@ val sparkDependencies = Seq(
 lazy val common = project 
   .settings(libraryDependencies ++= sparkDependencies)
 
-lazy val engine = project
+lazy val stackoverflow_survey = project
   .settings(libraryDependencies ++= sparkDependencies)
   .dependsOn(common)
 
