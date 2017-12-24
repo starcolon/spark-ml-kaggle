@@ -7,27 +7,27 @@ object StackOverflowTypes {
 
   case class Bio(
     respondent: Int, 
-    professional: String, 
-    country: String, 
-    formaleducation: String,
-    race: String, 
-    university: String,
-    majorundergrad: String)
+    professional: Option[String], 
+    country: Option[String], 
+    formaleducation: Option[String],
+    race: Option[String], 
+    university: Option[String],
+    majorundergrad: Option[String])
   
   case class Job(
     respondent: Int,
-    employmentstatus: String, 
-    companysize: String, 
-    companytype: String, 
+    employmentstatus: Option[String], 
+    companysize: Option[String], 
+    companytype: Option[String], 
     yearscodedjob: Option[Int],
-    developertype: String,
-    jobsatisfaction: String,
-    salary: String,
-    expectedsalary: String)
+    developertype: Option[String],
+    jobsatisfaction: Option[String],
+    salary: Option[String],
+    expectedsalary: Option[String])
 
   case class Personality(
     respondent: Int,
-    learningnewtech: String)
+    learningnewtech: Option[String])
 
   val columns = Seq(
     "respondent",

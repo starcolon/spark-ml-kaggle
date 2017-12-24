@@ -16,6 +16,7 @@ object SparkMain extends App with SparkBase {
   val trainPath = "/data/stackoverflow-survey-2017/survey_results_public.csv"
   val dsInput = (io <== trainPath)
     .lowercaseColumns
+    .representAsNulls("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
   
   val dfBio = dsInput.as[Bio]
