@@ -9,22 +9,22 @@ import com.starcolon.types.TypeOps._
 import com.starcolon.ml.domain.StackOverflowTypes
 import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
+import com.starcolon.ml.transformers._
 
 object SparkMain extends App with SparkBase {
   import spark.implicits._
 
-  val trainPath = "/data/stackoverflow-survey-2017/survey_results_public.csv"
-  val dsInput = (io <== trainPath)
+  val dsInput = (io <== Const.sourceFile)
     .lowercaseColumns
     .representAsNulls("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
   
   val dfBio = dsInput.as[Bio]
   val dfJob = dsInput.as[Job]
-  val dfPer = dsInput.as[Personality]
+  val dfPrf = dsInput.as[Preference]
 
-  def printCyan(n: Any) { println(CYAN); println(n); println(RESET) }
+  def printCyan(n: Any) { println(CYAN); println(n); print(RESET) }
   dfBio.rdd.take(5).foreach(printCyan)
   dfJob.rdd.take(5).foreach(printCyan)
-  dfPer.rdd.take(5).foreach(printCyan)
+  dfPrf.rdd.take(5).foreach(printCyan)
 }

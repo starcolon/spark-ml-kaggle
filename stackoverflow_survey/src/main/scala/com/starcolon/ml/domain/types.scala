@@ -10,6 +10,7 @@ object StackOverflowTypes {
     professional: Option[String], 
     country: Option[String], 
     formaleducation: Option[String],
+    majorundergradซ: Option[String],
     race: Option[String], 
     university: Option[String],
     majorundergrad: Option[String])
@@ -19,15 +20,33 @@ object StackOverflowTypes {
     employmentstatus: Option[String], 
     companysize: Option[String], 
     companytype: Option[String], 
+    currency: Option[String],
     yearscodedjob: Option[Int],
     developertype: Option[String],
     jobsatisfaction: Option[String],
+    careersatisfaction: Option[String],
     salary: Option[String],
-    expectedsalary: Option[String])
+    expectedsalary: Option[String],
+    jobseekingstatus: Option[String])
 
-  case class Personality(
+  case class Preference(
     respondent: Int,
-    learningnewtech: Option[String])
+    learningnewtech: Option[String],
+    tabsspaces: Option[String],
+    selftaughttypes: Option[String],
+    haveworkedlanguage: Option[String],
+    wantworklanguage: Option[String],
+    haveworkedframework: Option[String],
+    wantworkframework: Option[String],
+    haveworkeddatabase: Option[String],
+    wantworkdatabase: Option[String],
+    haveworkedplatform: Option[String],
+    wantworkplatform: Option[String],
+    ide: Option[String],
+    auditoryenvironment: Option[String],
+    methodology: Option[String],
+    versioncontrol: Option[String],
+    checkincode: Option[String])
 
   val columns = Seq(
     "respondent",
