@@ -10,6 +10,8 @@ object DatasetUtils {
     if (v==_null) None 
     else Some(v)
   })
+
+  def litArray(ns: Seq[_]) = lit(array(ns.map(lit):_*))
   
   implicit class DatasetOps(val df: Dataset[Row]) extends AnyVal {
     def lowercaseColumns: Dataset[Row] = 
