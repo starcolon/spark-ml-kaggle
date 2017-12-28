@@ -31,12 +31,14 @@ class PrintWithSchema(num: Integer = 20) extends Print(num) {
  * This is useful for printing out a typed RDD so we can examine the associated type.
  */
 case class PrintCollected(num: Integer = 20, colour: String = Console.CYAN) extends DataOutput {
-  private def printColoured(c: String)(row: Any){
+  private def printColoured(c: String)(rowTuple: (Any,Int)){
     print(colour)
-    println(c)
+    print(s"[${rowTuple._2}] ")
+    println(rowTuple._1)
     print(Console.RESET)
+    println("•" * 30)
   }
   override def <~(data: Dataset[_])(implicit spark: SparkSession) = {
-    data.rdd.take(num).foreach(printColoured(colour))
+    data.rdd.take(num).zipWithIndex.foreach(printColoured(colour))
   }
 }

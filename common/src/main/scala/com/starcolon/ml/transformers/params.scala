@@ -6,12 +6,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util._
 
-trait ColumnListParams extends Params {
-  val columns = new StringArrayParam(this, "columns", "List of column names")
-  def setColumns(value: Seq[String]): this.type = set(columns, value.toArray)
-  def getColumns: Array[String] = $(columns)
-}
-
+// TAOTODO: Deprecate this, use Spark official params instead
 trait InputOutputColumnParams extends Params {
   val inputColumn = new Param[String](this, "inputColumn", "Input column name")
   val outputColumn = new Param[String](this, "outputColumn", "Output column name")

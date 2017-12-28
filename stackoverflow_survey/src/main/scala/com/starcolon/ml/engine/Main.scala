@@ -31,14 +31,15 @@ object SparkMain extends App with SparkBase {
   // Feature encoding
   val nullStringImputer = new NullImputer()
     .setImputedValue("none")
-    .setColumns(Seq("professional", "formaleducation", "university"))
+    .setInputCols(Array("professional", "formaleducation", "university"))
+
   val stringSplitter = new StringSplitter()
-    .setColumns(Seq("learningnewtech"))
+    .setInputCols(Array("learningnewtech"))
 
   val encoderModel = new Pipeline().setStages(Array(nullStringImputer)).fit(dsInput)
 
 
-  // Train the models
+  // Classification Models
 
 
   // Evaluate
