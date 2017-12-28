@@ -9,5 +9,5 @@ class IO(implicit val spark: SparkSession) {
   def <==(path: String): Dataset[Row] = spark.read.format("csv").option("header", "true").load(path)
 
   // Write text file
-  def <~=(path: String, rdd: Dataset[_]) = ???
+  def ==>(path: String, rdd: Dataset[_]) = ???
 }

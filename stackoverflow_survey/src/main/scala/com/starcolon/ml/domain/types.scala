@@ -10,7 +10,6 @@ object StackOverflowTypes {
     professional: Option[String], 
     country: Option[String], 
     formaleducation: Option[String],
-    majorundergradซ: Option[String],
     race: Option[String], 
     university: Option[String],
     majorundergrad: Option[String])
