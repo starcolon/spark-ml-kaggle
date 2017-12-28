@@ -20,6 +20,7 @@ with DefaultParamsWritable {
     transformSchema(df.schema, logging = true)
     getImputedValue match {
       case v: Long => df.na.fill(v, $(inputCols))
+      case v: Integer => df.na.fill(v.toLong, $(inputCols))
       case v: Double => df.na.fill(v, $(inputCols))
       case s: String => df.na.fill(s, $(inputCols))
       case _ => throw new java.lang.UnsupportedOperationException("Unsupported type to impute values")

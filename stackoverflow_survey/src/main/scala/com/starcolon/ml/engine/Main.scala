@@ -43,4 +43,8 @@ object SparkMain extends App with SparkBase {
 
 
   // Evaluate
+
+
+  SparkSession.clearActiveSession()
+  spark.stop()
 }
