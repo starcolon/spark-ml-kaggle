@@ -18,7 +18,7 @@ object DatasetUtils {
     def castMany(cols: Seq[String], as: DataType): Dataset[Row] = 
       cols.foldLeft(df){ case(d,c) => d.withColumn(c, col(c).cast(as))}
 
-    def representAsNulls(valueAsNull: String, cols: Seq[String] = df.columns): Dataset[Row] = 
+    def convertToNone(valueAsNull: String, cols: Seq[String] = df.columns): Dataset[Row] = 
       cols.foldLeft(df){ case(d,c) => d.withColumn(c, toOption(col(c), lit(valueAsNull)))}
   }
 

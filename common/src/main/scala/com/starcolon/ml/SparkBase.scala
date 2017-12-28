@@ -12,6 +12,4 @@ trait SparkBase {
 
   implicit val sparkContext = spark.sparkContext
   import spark.implicits._
-
-  val io = new IO
 }
