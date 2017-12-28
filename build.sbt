@@ -6,9 +6,15 @@ scalaVersion := "2.11.8"
 
 val sparkVersion = "2.2.1"
 
+scalacOptions += "-Yresolve-term-conflict:strategyrm"
+
 
 resolvers ++= Seq(
   "apache-snapshots" at "http://repository.apache.org/snapshots/"
+)
+
+val devDependencies = Seq(
+  "org.scalatest" %% "scalatest" % "3.0.4" % "test"
 )
 
 val sparkDependencies = Seq(
@@ -20,7 +26,7 @@ val sparkDependencies = Seq(
 )
 
 lazy val common = project 
-  .settings(libraryDependencies ++= sparkDependencies)
+  .settings(libraryDependencies ++= sparkDependencies ++ devDependencies)
 
 lazy val stackoverflow_survey = project
   .settings(libraryDependencies ++= sparkDependencies)
