@@ -1,6 +1,6 @@
-# Spark Playground
+# Spark ML Kaggle
 
-A quick repo for excercising my Spark 2.x programming without additional frameworks.
+A quick Kaggle ML playground with Spark. The repo is UNDER CONSTRUCTION.
 
 ---
 
