@@ -116,3 +116,8 @@ extends VectorAssembler {
   def setImputedValue(value: T): this.type = set(imputeValue, value)
   def getImputedValue: T = $(imputeValue)
 }
+
+
+// TAOTODO: Array padder ?
+
+
