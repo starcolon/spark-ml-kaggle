@@ -9,6 +9,7 @@ import org.apache.spark.ml.param.shared.HasInputColsExposed
 import org.apache.spark.ml.feature._
 import org.apache.spark.sql.functions._
 import scala.reflect.runtime.universe._
+import scala.util.Try
 
 class NullImputer[T: TypeTag](override val uid: String = Identifiable.randomUID("NullImputerTransformer")) 
 extends Transformer
@@ -46,15 +47,19 @@ with DefaultParamsWritable {
         c.copy(dataType = ArrayType(StringType, c.nullable))
       case a => a
     })
+
+  private val split = udf{ s: String => Try{ s.split($(delimiter)).toSeq } getOrElse(Seq.empty[String]) }
   
-  override def transform(df: Dataset[_]): Dataset[Row] = ???
+  override def transform(df: Dataset[_]): Dataset[Row] = {
+    transformSchema(df.schema, logging = true)
+    $(inputCols).foldLeft(df.toDF){ case(d,c) => d.withColumn(c, split(col(c))) }
+  }
 
   def setInputCols(value: Array[String]): this.type = set(inputCols, value)
 
   final val delimiter = new Param[String](this, "delimiter", "String delimiter")
   setDefault(delimiter, ",")
   def setValue(value: String): this.type = set(delimiter, value)
-  def getValue: String = $(delimiter)
 }
 
 class TypeLiftToArrayLifter(override val uid: String = Identifiable.randomUID("TypeToArrayLifter"))
@@ -91,18 +96,25 @@ with DefaultParamsWritable {
   }
 }
 
-class VectorAssemblerWithNullable(override val uid: String = Identifiable.randomUID("VectorAssemblerWithNullable"))
+class VectorAssemblerWithNullable[T: TypeTag](override val uid: String = Identifiable.randomUID("VectorAssemblerWithNullable"))
 extends VectorAssembler {
 
   override def transform(df: Dataset[_]): Dataset[Row] = {
-    // TAOTODO: 
     // Impute missing values before passing through to the assembler
     transformSchema(df.schema, logging=true)
-    val cols = $(inputCols)
-    val df_ = df
+    val df_ = getImputedValue match {
+      case v: Long => df.na.fill(v, $(inputCols))
+      case v: Integer => df.na.fill(v.toLong, $(inputCols))
+      case v: Double => df.na.fill(v, $(inputCols))
+      case s: String => df.na.fill(s, $(inputCols))
+      case _ => throw new java.lang.UnsupportedOperationException("Unsupported type to impute values")
+    }
     super.transform(df_)
   }
 
+  final val imputeValue = new Param[T](this, "imputeValue", "Value to replace nulls")
+  def setImputedValue(value: T): this.type = set(imputeValue, value)
+  def getImputedValue: T = $(imputeValue)
 }
 
 class StringArrayEncoder(override val uid: String = Identifiable.randomUID("StringEncoderTransformer"))

@@ -11,10 +11,14 @@ import org.apache.spark.sql.{SparkSession, Dataset, Row}
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.functions._
+import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, Vectors}
+import scala.collection.mutable.WrappedArray
 
 case class B(i: Option[Long], j: Option[String], k: Option[Double])
 case class C(i: Option[Long], j: Option[Seq[String]], k: Option[Double])
 case class D(i: Option[Long], j: Option[String], k: Option[Seq[Double]])
+
+case class V(i: Option[Double], j: Option[Double], k:Option[Double])
 
 class BasicTest extends SparkTestInstance with Matchers {
 
@@ -29,6 +33,13 @@ class BasicTest extends SparkTestInstance with Matchers {
         B(Some(1), Some("foo,baz,foobar"), None),
         B(Some(2), None, Some(3.5)),
         B(Some(3), Some("bar,baz"), Some(0.0))
+      ).toDS
+
+    lazy val dfV = Seq(
+        V(None, Some(4.5), Some(3.25)),
+        V(Some(1.5), Some(2.5), Some(2.75)),
+        V(Some(0.0), Some(0.0), None),
+        V(Some(0.0), Some(0.0), Some(0.0))
       ).toDS
 
 
@@ -93,6 +104,26 @@ class BasicTest extends SparkTestInstance with Matchers {
       df_.where('k.isNotNull and 'k === litArray(Seq(1.0))).count shouldBe 1
       df_.where('k.isNotNull and 'k === litArray(Seq(3.5))).count shouldBe 1
       df_.where('k.isNotNull and 'k === litArray(Seq(0.0))).count shouldBe 1
+    }
+
+    it("should assembly features into vectors with null impute"){
+      val assembler = new VectorAssemblerWithNullable()
+        .setImputedValue(0.0)
+        .setInputCols(Array("i","j","k"))
+        .setOutputCol("v")
+
+      val vecToArray = udf{ v: Vector => v.toArray }
+
+      val dfV_ = new Pipeline().setStages(Array(assembler)).fit(dfV).transform(dfV)
+        .withColumn("w", vecToArray('v))
+
+      dfV_.where('v.isNull).count shouldBe 0
+      val res = dfV_.select("w").collect.map(_.getAs[Seq[Double]](0))
+
+      res(0) shouldBe Seq(0.0, 4.5, 3.25)
+      res(1) shouldBe Seq(1.5, 2.5, 2.75)
+      res(2) shouldBe Seq(0.0, 0.0, 0.0)
+      res(3) shouldBe Seq(0.0, 0.0, 0.0)
     }
 
   }
