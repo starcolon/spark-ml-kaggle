@@ -3,6 +3,7 @@ package com.starcolon.ml.engine
 import org.apache.spark.sql.{SparkSession, Dataset, Row}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
+import Console.{CYAN,GREEN,YELLOW,RED,MAGENTA,RESET}
 
 import com.starcolon.ml.SparkBase
 import com.starcolon.ml.process._

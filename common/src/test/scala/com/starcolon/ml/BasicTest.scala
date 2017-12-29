@@ -126,6 +126,10 @@ class BasicTest extends SparkTestInstance with Matchers {
       res(3) shouldBe Seq(0.0, 0.0, 0.0)
     }
 
+    it("should encode string array with indexer"){
+      // TAOTODO:
+    }
+
   }
 
 }

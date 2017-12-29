@@ -5,7 +5,7 @@ import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.param._
-import org.apache.spark.ml.param.shared.HasInputColsExposed
+import org.apache.spark.ml.param.shared.{HasInputColsExposed, HasInOutColExposed}
 import org.apache.spark.ml.feature._
 import org.apache.spark.sql.functions._
 import scala.reflect.runtime.universe._
@@ -115,16 +115,4 @@ extends VectorAssembler {
   final val imputeValue = new Param[T](this, "imputeValue", "Value to replace nulls")
   def setImputedValue(value: T): this.type = set(imputeValue, value)
   def getImputedValue: T = $(imputeValue)
-}
-
-class StringArrayEncoder(override val uid: String = Identifiable.randomUID("StringEncoderTransformer"))
-extends Transformer 
-with InputOutputColumnParams
-with DefaultParamsWritable  // TAOTODO: This should also associate with a [[Model]] 
-{
-  override def copy(extra: ParamMap): this.type = defaultCopy(extra)
-
-  override def transformSchema(schema: StructType) = ???
-
-  override def transform(df: Dataset[_]): Dataset[Row] = ???
 }
