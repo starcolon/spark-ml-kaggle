@@ -9,8 +9,10 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.util.MLWriter
+import org.apache.spark.SparkException
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
+import org.apache.hadoop.fs.Path
 
 private[feature] trait ArrayEncoderBase
 extends Params 
@@ -23,22 +25,63 @@ with HasInputCol with HasOutputCol {
     require(schema.map(_.name) contains outputCol == false, "Dataset already has an output column : $outputColumn")
     schema.add(StructField(outputColumn, ArrayType(IntegerType, false), false))
   }
+}
+
+private[feature] class ArrayEncoderWriter[T: ClassTag](instance: ArrayEncoderModel[T]) 
+extends MLWriter {
+  private case class Data(labels: Array[T])
+
+  override protected def saveImpl(path: String): Unit = {
+    DefaultParamsWriter.saveMetadata(instance, path, sc)
+    val data = Data(instance.labels)
+    val dataPath = new Path(path, "data").toString
+    sparkSession.createDataFrame(Seq(data)).repartition(1).write.parquet(dataPath)
+  }
+}
+
+private[feature] object ArrayEncoderUtil {
+  
+  def toIntSeq(s: Array[_]) = s.toSeq.asInstanceOf[Seq[Integer]]
+  def toLongSeq(s: Array[_]) = s.toSeq.asInstanceOf[Seq[Long]]
+  def toDoubleSeq(s: Array[_]) = s.toSeq.asInstanceOf[Seq[Double]]
+  def toStrSeq(s: Array[_]) = s.toSeq.asInstanceOf[Seq[String]]
 
 }
 
-class ArrayEncoderModel[T: ClassTag](override val uid: String, labels: Array[T])
+class ArrayEncoderModel[T: ClassTag](override val uid: String, val labels: Array[T])
 extends Model[ArrayEncoderModel[T]]
 with ArrayEncoderBase
 with MLWritable {
 
-  def write: MLWriter = ???
+  lazy val stringLabels = ArrayEncoderUtil.toStrSeq(labels)
+  lazy val intLabels = ArrayEncoderUtil.toIntSeq(labels)
+  lazy val doubleLabels = ArrayEncoderUtil.toDoubleSeq(labels)
+  lazy val longLabels = ArrayEncoderUtil.toLongSeq(labels)
 
-  override def copy(extra: ParamMap): ArrayEncoderModel[T] = ???
+  def write: MLWriter = new ArrayEncoderWriter[T](this)
+
+  override def copy(extra: ParamMap): ArrayEncoderModel[T] = {
+    val copied = new ArrayEncoderModel[T](uid, labels)
+    copyValues(copied, extra).setParent(parent)
+  }
+
+  private val encodeStringArray = udf{ arr: Seq[String] => arr.map(n => if (stringLabels contains n) stringLabels.indexOf(n) else 0) }
+  private val encodeIntArray = udf{ arr: Seq[Integer] => arr.map(n => if (intLabels contains n) intLabels.indexOf(n) else 0) }
+  private val encodeLongArray = udf{ arr: Seq[Long] => arr.map(n => if (longLabels contains n) longLabels.indexOf(n) else 0) }
+  private val encodeDoubleArray = udf{ arr: Seq[Double] => arr.map(n => if (doubleLabels contains n) doubleLabels.indexOf(n) else 0) }
 
   def transformSchema(schema: StructType): StructType = transformAndValidate(schema)
 
-  def transform(dataset: Dataset[_]): DataFrame = ???
-
+  def transform(dataset: Dataset[_]): DataFrame = {
+    transformAndValidate(dataset.schema)
+    dataset.schema($(inputCol)).dataType match {
+      case ArrayType(StringType,_) => dataset.withColumn($(outputCol), encodeStringArray(col($(inputCol))))
+      case ArrayType(IntegerType,_) => dataset.withColumn($(outputCol), encodeIntArray(col($(inputCol))))
+      case ArrayType(LongType,_) => dataset.withColumn($(outputCol), encodeLongArray(col($(inputCol))))
+      case ArrayType(DoubleType,_) => dataset.withColumn($(outputCol), encodeDoubleArray(col($(inputCol))))
+      case t => throw new SparkException(s"Unable to encode unsupported array type : $t")
+    }
+  }
 }
 
 
