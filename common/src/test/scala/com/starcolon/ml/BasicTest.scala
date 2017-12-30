@@ -8,6 +8,7 @@ import com.starcolon.ml.transformers._
 import com.starcolon.ml.DatasetUtils.litArray
 
 import org.apache.spark.sql.{SparkSession, Dataset, Row}
+import org.apache.spark.ml.feature.ArrayEncoder
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.functions._
@@ -19,6 +20,8 @@ case class C(i: Option[Long], j: Option[Seq[String]], k: Option[Double])
 case class D(i: Option[Long], j: Option[String], k: Option[Seq[Double]])
 
 case class V(i: Option[Double], j: Option[Double], k:Option[Double])
+
+case class S(a: Seq[String], b: Seq[Double], c: Seq[Integer])
 
 class BasicTest extends SparkTestInstance with Matchers {
 
@@ -41,6 +44,19 @@ class BasicTest extends SparkTestInstance with Matchers {
         V(Some(0.0), Some(0.0), None),
         V(Some(0.0), Some(0.0), Some(0.0))
       ).toDS
+
+    lazy val dfS = Seq(
+        S(Nil, Nil, Nil),
+        S(Seq("a","b"),
+          Seq(0.1, 0.2, 0.5),
+          Seq(0,1)),
+        S(Seq("b","c"),
+          Seq(0.2),
+          Seq(0,3,4,5)),
+        S(Seq("c","c","c"),
+          Seq(0,0.1,0),
+          Seq(3,4,5))
+        ).toDS
 
 
     it("should impute nulls (string column)"){
@@ -127,8 +143,53 @@ class BasicTest extends SparkTestInstance with Matchers {
     }
 
     it("should encode string array with indexer"){
-      // TAOTODO:
+      
+      val encoder = new ArrayEncoder[String]().setInputCol("a").setOutputCol("v")
+      val df_ = encoder.fit(dfS).transform(dfS)
+      val res: Seq[Integer] = df_.select("v")
+        .flatMap(_.getAs[Seq[Integer]](0))
+        .collect
+        .toList
+
+      df_.show
+
+      res should contain allOf(0,1,2)
+      res should not contain (-1)
+      res should not contain (3)
     }
+
+    it("should encode double array with indexer"){
+
+      val encoder = new ArrayEncoder[Double]().setInputCol("b").setOutputCol("v")
+      val df_ = encoder.fit(dfS).transform(dfS)
+      val res: Seq[Integer] = df_.select("v")
+        .flatMap(_.getAs[Seq[Integer]](0))
+        .collect
+        .toList
+
+      df_.show
+
+      res should contain allOf(0,1,2,3)
+      res should not contain (-1)
+      res should not contain (4)
+    }
+
+    it("should encode long array with indexer"){
+
+      val encoder = new ArrayEncoder[Integer]().setInputCol("c").setOutputCol("v")
+      val df_ = encoder.fit(dfS).transform(dfS)
+      val res: Seq[Integer] = df_.select("v")
+        .flatMap(_.getAs[Seq[Integer]](0))
+        .collect
+        .toList
+
+      df_.show
+
+      res should contain allOf(0,1,2,3,4)
+      res should not contain (-1)
+      res should not contain (5)
+    }
+
 
   }
 

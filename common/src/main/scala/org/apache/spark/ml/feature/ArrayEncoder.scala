@@ -14,6 +14,8 @@ import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 import org.apache.hadoop.fs.Path
 
+// TAOTODO: Implement model reader 
+
 private[feature] trait ArrayEncoderBase
 extends Params 
 with HasInputCol with HasOutputCol {
@@ -21,10 +23,10 @@ with HasInputCol with HasOutputCol {
   def transformAndValidate(schema: StructType): StructType = {
     val inputColumn = $(inputCol)
     val outputColumn = $(outputCol)
-    require(schema.map(_.name) contains inputColumn, "Dataset has to contain the input column : $inputColumn}")
-    require(schema.map(_.name) contains outputCol == false, "Dataset already has an output column : $outputColumn")
+    require(schema.map(_.name) contains inputColumn, s"Dataset has to contain the input column : $inputColumn")
+    require(!(schema.map(_.name) contains outputCol), s"Dataset already has an output column : $outputColumn")
     schema.add(StructField(outputColumn, ArrayType(IntegerType, false), false))
-  }
+  }  
 }
 
 private[feature] class ArrayEncoderWriter[T: ClassTag](instance: ArrayEncoderModel[T]) 
@@ -65,10 +67,10 @@ with MLWritable {
     copyValues(copied, extra).setParent(parent)
   }
 
-  private val encodeStringArray = udf{ arr: Seq[String] => arr.map(n => if (stringLabels contains n) stringLabels.indexOf(n) else 0) }
-  private val encodeIntArray = udf{ arr: Seq[Integer] => arr.map(n => if (intLabels contains n) intLabels.indexOf(n) else 0) }
-  private val encodeLongArray = udf{ arr: Seq[Long] => arr.map(n => if (longLabels contains n) longLabels.indexOf(n) else 0) }
-  private val encodeDoubleArray = udf{ arr: Seq[Double] => arr.map(n => if (doubleLabels contains n) doubleLabels.indexOf(n) else 0) }
+  private val encodeStringArray = udf{ arr: Seq[String] => arr.map(stringLabels.indexOf(_)) }
+  private val encodeIntArray = udf{ arr: Seq[Integer] => arr.map(intLabels.indexOf(_)) }
+  private val encodeLongArray = udf{ arr: Seq[Long] => arr.map(longLabels.indexOf(_)) }
+  private val encodeDoubleArray = udf{ arr: Seq[Double] => arr.map(doubleLabels.indexOf(_)) }
 
   def transformSchema(schema: StructType): StructType = transformAndValidate(schema)
 
@@ -104,4 +106,7 @@ with DefaultParamsWritable {
   override def transformSchema(schema: StructType) = transformAndValidate(schema)
 
   override def copy(extra: ParamMap): this.type = defaultCopy(extra)
+
+  final def setInputCol(value: String) = set(inputCol, value)
+  final def setOutputCol(value: String) = set(outputCol, value)
 }
