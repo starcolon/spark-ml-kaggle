@@ -18,7 +18,7 @@ object SparkMain extends App with SparkBase {
   import spark.implicits._
 
   // Read input
-  val dsInput = (ReadCSV <~ Const.stackOverflowSurveyCSV)
+  val dsInput = ((new ReadCSV) <~ Const.stackOverflowSurveyCSV)
     .lowercaseColumns
     .convertToNone("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)

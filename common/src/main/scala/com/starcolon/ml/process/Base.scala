@@ -25,8 +25,8 @@ object Implicits {
   }
 }
 
-trait DataProvider { def <~(from: Location = NoWhere)(implicit spark: SparkSession): Dataset[_] }
-trait DataOutput { def <~(data: Dataset[_])(implicit spark: SparkSession): Unit }
+trait DataProvider { def <~(from: Location = NoWhere): Dataset[_] }
+trait DataOutput { def <~(data: Dataset[_]): Unit }
 
 trait Step 
 
