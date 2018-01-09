@@ -14,7 +14,6 @@ resolvers ++= Seq(
 )
 
 val devDependencies = Seq(
-  //"com.stratio.datasource" %% "spark-mongodb" % "0.12.0",
   "org.mongodb.spark" %% "mongo-spark-connector" % "2.2.1",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test"
 )

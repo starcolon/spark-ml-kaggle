@@ -36,7 +36,9 @@ class IOInterfaceTest extends SparkTestInstance with Matchers {
 
     it("should read records from mongo"){
       val df = mongoReader <~ testCollection
-      df.show(20)
+      
+      Print(3) <~ df
+      
       df.count shouldBe dfTest.count
       df.as[A].rdd.collect should contain theSameElementsAs(dfTest.as[A].rdd.collect)
     }

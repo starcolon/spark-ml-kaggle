@@ -40,21 +40,6 @@ case class ReadMongo(database: String)(implicit spark: SparkSession) extends Dat
   }
 }
 
-// case class ReadMongo(database: String)(implicit spark: SparkSession) extends DataProvider {
-//   override def <~(from: Location = NoWhere) = {
-//     val collection: String = from
-//     val config = MongodbConfigBuilder(
-//       Map(
-//         Host -> List("localhost:27017"), 
-//         Database -> database, 
-//         Collection -> collection, 
-//         SamplingRatio -> 1.0, 
-//         WriteConcern -> "normal")).build
-
-//     spark.sqlContext.fromMongoDB(config)
-//   }
-// }
-
 case class Print(num: Integer = 20) extends DataOutput {
   override def <~(data: Dataset[_]) = data.show(num)
 }
@@ -75,7 +60,8 @@ case class WriteMongo(database: String, collection: String) extends DataOutput {
     val writeConfig = WriteConfig(Map(
       "uri" -> "mongodb://localhost:27017/",
       "database" -> database,
-      "collection" -> collection))
+      "collection" -> collection,
+      "replaceDocument" -> "true"))
     MongoSpark.save(data, writeConfig)
   }
 }
