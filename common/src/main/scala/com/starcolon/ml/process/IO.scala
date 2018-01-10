@@ -25,14 +25,12 @@ case class ReadCassandra(implicit spark: SparkSession) extends DataProvider {
   import com.datastax.spark.connector._
   override def <~(from: Location = NoWhere) = {
     val DatabaseTable(database,table) = from
-    //spark.sparkContext.cassandraTable(database, table).toDF
     spark
       .read
       .format("org.apache.spark.sql.cassandra")
       .options(Map(
         "table" -> table,
-        "keyspace" -> "test",
-        "cluster" -> database)).load()
+        "keyspace" -> database)).load() // NOTE: reference to keyspace as a database
   }
 }
 
@@ -63,8 +61,11 @@ class PrintWithSchema(num: Integer = 20) extends Print(num) {
   }
 }
 
-case class WriteCassandra extends DataOutput {
-  override def <~(data: Dataset[_]) = ???
+case class WriteCassandra(keyspace: String, table: String) extends DataOutput {
+  override def <~(data: Dataset[_]) = {
+    import com.datastax.spark.connector._
+    data.rdd.saveToCassandra(keyspace, table)
+  }
 }
 
 case class WriteMongo(database: String, collection: String) extends DataOutput {

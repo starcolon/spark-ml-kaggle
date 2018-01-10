@@ -24,7 +24,7 @@ object Implicits {
   implicit def locationAsString(where: Location) = where match {
     case NoWhere => ""
     case PathLocation(p) => p
-    case DatabaseTable(a,b) => s"$a:$b"
+    case DatabaseTable(a,b) => s"$a.$b"
   }
   implicit def locationAsStringPair(where: Location) = where match {
     case NoWhere => ("","")
