@@ -14,6 +14,7 @@ resolvers ++= Seq(
 )
 
 val devDependencies = Seq(
+  "com.datastax.spark" %% "spark-cassandra-connector" % "2.0.6",
   "org.mongodb.spark" %% "mongo-spark-connector" % "2.2.1",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test"
 )

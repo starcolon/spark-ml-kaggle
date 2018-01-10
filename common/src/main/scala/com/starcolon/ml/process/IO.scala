@@ -8,12 +8,9 @@ import com.mongodb.spark._
 import org.bson.Document
 import com.mongodb.spark.config._
 
-// import com.mongodb.casbah.{WriteConcern => MongodbWriteConcern}
-// import com.stratio.datasource.mongodb._
-// import com.stratio.datasource.mongodb.config._
-// import com.stratio.datasource.mongodb.config.MongodbConfig._
+import org.apache.spark.sql.cassandra._
 
-import Implicits.locationAsString
+import Implicits.{locationAsString,locationAsStringPair,stringPairAsLocation}
 
 case class ReadCSV(implicit spark: SparkSession) extends DataProvider {
   override def <~(from: Location = NoWhere) = 
@@ -25,12 +22,23 @@ case class ReadHive(implicit spark: SparkSession) extends DataProvider {
 }
 
 case class ReadCassandra(implicit spark: SparkSession) extends DataProvider {
-  override def <~(from: Location = NoWhere) = ???
+  import com.datastax.spark.connector._
+  override def <~(from: Location = NoWhere) = {
+    val DatabaseTable(database,table) = from
+    //spark.sparkContext.cassandraTable(database, table).toDF
+    spark
+      .read
+      .format("org.apache.spark.sql.cassandra")
+      .options(Map(
+        "table" -> table,
+        "keyspace" -> "test",
+        "cluster" -> database)).load()
+  }
 }
 
-case class ReadMongo(database: String)(implicit spark: SparkSession) extends DataProvider {
+case class ReadMongo(implicit spark: SparkSession) extends DataProvider {
   override def <~(from: Location = NoWhere) = {
-    val collection: String = from
+    val DatabaseTable(database,collection) = from
     val readConfig = ReadConfig(Map(
       "uri" -> "mongodb://localhost:27017/",
       "database" -> database,
@@ -40,8 +48,12 @@ case class ReadMongo(database: String)(implicit spark: SparkSession) extends Dat
   }
 }
 
-case class Print(num: Integer = 20) extends DataOutput {
-  override def <~(data: Dataset[_]) = data.show(num)
+case class Print(num: Integer = 20, colour: String = Console.RESET) extends DataOutput {
+  override def <~(data: Dataset[_]) = {
+    println(colour)
+    data.show(num)
+    println(Console.RESET)
+  }
 }
 
 class PrintWithSchema(num: Integer = 20) extends Print(num) {

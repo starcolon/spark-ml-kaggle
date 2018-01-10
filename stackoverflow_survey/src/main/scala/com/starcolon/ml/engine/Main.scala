@@ -24,7 +24,7 @@ object SparkMain extends App with SparkBase {
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
     .where($"country".isNotNull and $"employmentstatus".isNotNull)
   
-  // DEBUG: Test parsing the datasets
+  // Test parsing the datasets
   PrintCollected(5) <~ dsInput.as[Bio]
   PrintCollected(5) <~ dsInput.as[Job]
   PrintCollected(5) <~ dsInput.as[Preference]

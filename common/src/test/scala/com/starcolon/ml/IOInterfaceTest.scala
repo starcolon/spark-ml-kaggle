@@ -24,8 +24,8 @@ class IOInterfaceTest extends SparkTestInstance with Matchers {
 
   describe("MongoDB interface"){
     val testDB = "test_ml"
-    val testCollection = "cc"
-    val mongoReader = new ReadMongo(testDB)
+    val testCollection = (testDB -> "cc")
+    val mongoReader = new ReadMongo
     val mongoWriter = new WriteMongo(testDB, testCollection)
 
     lazy val dfTest = Seq(A(1,"One"), A(2,"Two"), A(3,"Three")).toDF
@@ -34,6 +34,8 @@ class IOInterfaceTest extends SparkTestInstance with Matchers {
       mongoWriter <~ dfTest
     }
 
+    // NOTE: This test is not idempotent
+    //        Running the test multiple times will never clear the existing records.
     it("should read records from mongo"){
       val df = mongoReader <~ testCollection
       

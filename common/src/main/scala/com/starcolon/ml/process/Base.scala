@@ -8,6 +8,7 @@ import org.apache.spark.sql.functions._
 trait Location
 case object NoWhere extends Location
 case class PathLocation(path: String) extends Location
+case class DatabaseTable(database: String, table: String) extends Location
 
 trait Qty
 case class RowsQty(num: Integer) extends Qty
@@ -19,9 +20,16 @@ object Implicits {
     case None => NoWhere
     case Some(s) => PathLocation(s)
   }
+  implicit def stringPairAsLocation(pair: (String, String)): Location = DatabaseTable(pair._1, pair._2)
   implicit def locationAsString(where: Location) = where match {
     case NoWhere => ""
     case PathLocation(p) => p
+    case DatabaseTable(a,b) => s"$a:$b"
+  }
+  implicit def locationAsStringPair(where: Location) = where match {
+    case NoWhere => ("","")
+    case PathLocation(p) => (p,"")
+    case DatabaseTable(a,b) => (a,b)
   }
 }
 
