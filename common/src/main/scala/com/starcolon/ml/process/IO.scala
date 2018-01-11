@@ -64,9 +64,7 @@ class PrintWithSchema(num: Integer = 20) extends Print(num) {
 case class WriteCassandra(keyspace: String, table: String) extends DataOutput {
   override def <~(data: Dataset[_]) = {
     import com.datastax.spark.connector._
-    data.rdd.saveToCassandra(
-      keyspace, table, 
-      SomeColumns(data.columns.head, data.columns.tail:_*))
+    data.write.cassandraFormat(table, keyspace).save()
   }
 }
 
