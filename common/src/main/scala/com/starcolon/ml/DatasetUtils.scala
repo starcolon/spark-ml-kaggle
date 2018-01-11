@@ -22,6 +22,9 @@ object DatasetUtils {
 
     def convertToNone(valueAsNull: String, cols: Seq[String] = df.columns): Dataset[Row] = 
       cols.foldLeft(df){ case(d,c) => d.withColumn(c, toOption(col(c), lit(valueAsNull)))}
+
+    def dropMultiple(cols: Seq[String]): Dataset[Row] = 
+      cols.foldLeft(df){case(d,c) => d.drop(c)}
   }
 
 }

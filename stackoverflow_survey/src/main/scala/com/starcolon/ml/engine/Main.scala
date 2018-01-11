@@ -13,6 +13,7 @@ import com.starcolon.ml.domain.StackOverflowTypes
 import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
 import com.starcolon.ml.transformers._
+import com.starcolon.ml.model.Classifier
 
 object SparkMain extends App with SparkBase {
   import spark.implicits._
@@ -37,10 +38,10 @@ object SparkMain extends App with SparkBase {
   val stringSplitter = new StringSplitter()
     .setInputCols(Array("learningnewtech"))
 
-  val encoderModel = new Pipeline().setStages(Array(nullStringImputer)).fit(dsInput)
-
+  val featureEncoder = new Pipeline().setStages(Array(nullStringImputer))
 
   // Classification Models
+  val clfModel1 = new Pipeline().setStages(Array(featureEncoder, Classifier.XGBoost))
 
 
   // Evaluate
