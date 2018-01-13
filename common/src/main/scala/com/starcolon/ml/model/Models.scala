@@ -6,14 +6,17 @@ import org.apache.spark.sql.types._
 import org.apache.spark.ml.{Pipeline,Estimator}
 import org.apache.spark.ml.classification.{DecisionTreeClassifier,RandomForestClassifier}
 
-object Classifier {
+trait ModelColumns {
+  val predictionCol = "predict"
+  val featuresCol = "features"
+}
+
+object Classifier extends ModelColumns {
   val XGBoost: Pipeline = ???
   val DecisionTree: Pipeline = new Pipeline().setStages(Array(decisionTree))
   val RandomForest: Pipeline = new Pipeline().setStages(Array(randomForest))
   val NaiveBayes: Pipeline = ???
-
-  private val predictionCol = "predict"
-  private val featuresCol = "features"
+  val SVM: Pipeline = ???
 
   private val decisionTree = new DecisionTreeClassifier()
     .setFeaturesCol(featuresCol)

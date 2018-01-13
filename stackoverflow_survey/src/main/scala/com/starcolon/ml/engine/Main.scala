@@ -15,9 +15,9 @@ import com.starcolon.ml.domain.StackOverflowTypes
 import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
 import com.starcolon.ml.transformers._
-import com.starcolon.ml.model.Classifier
+import com.starcolon.ml.model.{Classifier, ModelColumns}
 
-object SparkMain extends App with SparkBase {
+object SparkMain extends App with SparkBase with ModelColumns {
   import spark.implicits._
 
   // Read input
@@ -42,7 +42,7 @@ object SparkMain extends App with SparkBase {
 
   val vectorAssembler = new VectorAssemblerWithNullable()
     .setInputCols(Array("learningnewtech"))
-    .setOutputCol("features")
+    .setOutputCol(featuresCol)
 
   val featureEncoder = new Pipeline().setStages(Array(
     nullStringImputer,

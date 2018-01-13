@@ -5,7 +5,7 @@ import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.util._
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.param._
-import org.apache.spark.ml.param.shared.{HasInputColsExposed, HasInOutColExposed}
+import org.apache.spark.ml.param.shared._
 import org.apache.spark.ml.feature._
 import org.apache.spark.sql.functions._
 
@@ -119,10 +119,17 @@ extends VectorAssembler {
 }
 
 class StringArrayEncoder(override val uid: String = Identifiable.randomUID("StringArrayEncoder"))
-extends Transformer {
+extends Transformer 
+with HasInputColExposed {
 
   override def copy(extra: ParamMap): this.type = defaultCopy(extra)
-  override def transformSchema(schema: StructType): StructType = schema
+  override def transformSchema(schema: StructType): StructType = 
+    StructType(schema.map{
+      case c if c.name == $(inputCol) => 
+        c.copy(dataType = ArrayType(IntegerType, false))
+      case a => a
+    })
+
   override def transform(df: Dataset[_]): Dataset[Row] = ???
 }
 
