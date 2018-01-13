@@ -96,3 +96,9 @@ case class PrintCollected(num: Integer = 20, colour: String = Console.CYAN) exte
     data.rdd.take(num).zipWithIndex.foreach(printColoured(colour))
   }
 }
+
+case class Tie(out: DataOutput*) extends DataOutput {
+  override def <~ (data: Dataset[_]) = {
+    out.foreach(_ <~ data)
+  }
+}

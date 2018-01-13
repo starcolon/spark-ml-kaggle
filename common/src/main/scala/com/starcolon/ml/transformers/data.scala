@@ -118,6 +118,14 @@ extends VectorAssembler {
   def getImputedValue: T = $(imputeValue)
 }
 
+class StringArrayEncoder(override val uid: String = Identifiable.randomUID("StringArrayEncoder"))
+extends Transformer {
+
+  override def copy(extra: ParamMap): this.type = defaultCopy(extra)
+  override def transformSchema(schema: StructType): StructType = schema
+  override def transform(df: Dataset[_]): Dataset[Row] = ???
+}
+
 
 // TAOTODO: Array padder ?
 
