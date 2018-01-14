@@ -14,8 +14,6 @@ import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 import org.apache.hadoop.fs.Path
 
-// TAOTODO: Implement model reader 
-
 private[feature] trait ArrayEncoderBase
 extends Params 
 with HasInputCol with HasOutputCol {
@@ -84,6 +82,24 @@ with MLWritable {
       case t => throw new SparkException(s"Unable to encode unsupported array type : $t")
     }
   }
+}
+
+private class ArrayEncoderModelReader[T: ClassTag] extends MLReader[ArrayEncoderModel[T]] {
+
+  override def load(path: String): ArrayEncoderModel[T] = {
+    val className = classOf[ArrayEncoderModel[T]].getName
+    val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
+    val dataPath = new Path(path, "data").toString
+    val data = sparkSession.read.parquet(dataPath)
+      .select("labels")
+      .head()
+    val labels = data.getAs[Seq[T]](0).toArray
+    val model = new ArrayEncoderModel[T](metadata.uid, labels)
+    DefaultParamsReader.getAndSetParams(model, metadata)
+    model
+  }
+
+  def read: MLReader[ArrayEncoderModel[T]] = new ArrayEncoderModelReader[T]
 }
 
 

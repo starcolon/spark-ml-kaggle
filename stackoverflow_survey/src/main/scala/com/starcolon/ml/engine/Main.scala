@@ -48,12 +48,12 @@ object SparkMain extends App with SparkBase with ModelColumns {
     nullStringImputer,
     vectorAssembler))
 
-  // Classification Models
+  // Define classification models
   val models = Seq(Classifier.DecisionTree, Classifier.RandomForest)
     .map{clf => new Pipeline().setStages(Array(featureEncoder, clf))}
 
-
-  // Evaluate
+  // Evaluate each model separately
+  //
 
 
   SparkSession.clearActiveSession()

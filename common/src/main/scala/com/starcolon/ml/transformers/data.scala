@@ -118,21 +118,6 @@ extends VectorAssembler {
   def getImputedValue: T = $(imputeValue)
 }
 
-class StringArrayEncoder(override val uid: String = Identifiable.randomUID("StringArrayEncoder"))
-extends Transformer 
-with HasInputColExposed {
-
-  override def copy(extra: ParamMap): this.type = defaultCopy(extra)
-  override def transformSchema(schema: StructType): StructType = 
-    StructType(schema.map{
-      case c if c.name == $(inputCol) => 
-        c.copy(dataType = ArrayType(IntegerType, false))
-      case a => a
-    })
-
-  override def transform(df: Dataset[_]): Dataset[Row] = ???
-}
-
 
 // TAOTODO: Array padder ?
 
