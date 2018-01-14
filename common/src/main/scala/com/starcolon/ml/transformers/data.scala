@@ -119,6 +119,6 @@ extends VectorAssembler {
 }
 
 
-// TAOTODO: Array padder ?
+// TAOTODO: create array to sparse vector transformer
 
 

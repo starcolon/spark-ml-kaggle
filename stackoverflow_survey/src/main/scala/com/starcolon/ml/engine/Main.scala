@@ -40,13 +40,13 @@ object SparkMain extends App with SparkBase with ModelColumns {
   val stringSplitter = new StringSplitter()
     .setInputCols(Array("learningnewtech"))
 
-  val vectorAssembler = new VectorAssemblerWithNullable()
-    .setInputCols(Array("learningnewtech"))
-    .setOutputCol(featuresCol)
+  val stringArrayIndexer = new ArrayEncoder[String]()
+    .setInputCol("learningnewtech")
+    .setOutputCol("learningnewtech_array")
 
   val featureEncoder = new Pipeline().setStages(Array(
     nullStringImputer,
-    vectorAssembler))
+    stringArrayIndexer))
 
   // Define classification models
   val models = Seq(Classifier.DecisionTree, Classifier.RandomForest)
