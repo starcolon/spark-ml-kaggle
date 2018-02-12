@@ -63,6 +63,9 @@ with DefaultParamsWritable {
   def setValue(value: String): this.type = set(delimiter, value)
 }
 
+/**
+ * Lifting a column of type [T] to [Seq[T]]
+ */
 class TypeLiftToArrayLifter(override val uid: String = Identifiable.randomUID("TypeToArrayLifter"))
 extends Transformer 
 with HasInputColsExposed
@@ -118,7 +121,58 @@ extends VectorAssembler {
   def getImputedValue: T = $(imputeValue)
 }
 
+/**
+ * A transformer which prints out an analysis of 
+ * an interaction between features and the target values
+ * without changing the data
+ *
+ * NOTE: currently only supports in/out types of [[double]] 
+ */
+class FeatureVsTargetReport(override val uid: String = Identifiable.randomUID("FeatureVsTargetMeasure"))
+extends Transformer 
+with HasInputColsExposed
+with HasOutputColExposed {
 
-// TAOTODO: create array to sparse vector transformer
+  private def printAnalysisOnInputs(inputs: Seq[String], df: Dataset[_]): Unit = {
+    println
+    println("*****************************************")
+    println(s" Feature distribution : $inputs.mkString(", ")")
+    println("*****************************************")
+    val output = $(outputCol)
+    val distinctOutputs = df.select($(outputCol))
+      .distinct.collect
+      .map(_.getAs[Double](0))
+      .sorted
 
+    val outputDists = distinctOutputs.map{ out =>
+      df.where(col($(outputCol)) === out)
+        .groupBy(inputs.head, inputs.tail:_*)
+        .count
+        .withColumnRenamed("count", s"$output = $out")
+    }
+
+    val joined = outputDists.reduce{ (a,b) =>
+      a.join(b, inputs, "outer")
+    }.orderBy(inputs.head, inputs.tail:_*).show(100)
+  }
+
+  override def copy(extra: ParamMap): this.type = defaultCopy(extra)
+  override def transformSchema(schema: StructType) = schema
+  override def transform(df: Dataset[_]): Dataset[Row] = {
+    val dfAnalys = df.select($(outputCol), $(inputCols).sorted:_*)
+
+    val inputColsSorted = $(inputCols)
+    
+    // Analysis on each individual column
+    for (c <- inputColsSorted) yield printAnalysisOnInputs(c :: Nil, dfAnalys)
+
+    // Analysis on each pair of columns
+    { for (a <- inputColsSorted; b <- inputColsSorted.filterNot(Set(a))) 
+      yield Seq(a,b).sorted }
+      .distinct
+      .foreach{ cols => printAnalysisOnInputs(cols, dfAnalys) }
+
+    df.toDF
+  }
+}
 
