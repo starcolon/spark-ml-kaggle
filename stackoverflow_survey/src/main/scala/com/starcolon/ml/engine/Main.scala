@@ -45,9 +45,15 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .setInputCol("learningnewtech")
     .setOutputCol("learningnewtech_array")
 
+  val featureReport = new FeatureVsTargetReport()
+    .setInputCols(Array("professional","formaleducation"))
+    .setOutputCol("learningnewtech")
+
   val featureEncoder = new Pipeline().setStages(Array(
     nullStringImputer,
-    stringArrayIndexer))
+    stringArrayIndexer,
+    featureReport))
+
 
   // Define classification models
   val models = Seq(Classifier.DecisionTree, Classifier.RandomForest)

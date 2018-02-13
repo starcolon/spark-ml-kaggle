@@ -133,6 +133,11 @@ extends Transformer
 with HasInputColsExposed
 with HasOutputColExposed {
 
+  final def setInputCols(value: Array[String]): this.type = set(inputCols, value)
+  final def setOutputCol(value: String): this.type = set(outputCol, value)
+
+  // TAOTODO: Add strategy as a param
+
   private def printAnalysisOnInputs(inputs: Seq[String], df: Dataset[_]): Unit = {
     println
     println("*****************************************")
