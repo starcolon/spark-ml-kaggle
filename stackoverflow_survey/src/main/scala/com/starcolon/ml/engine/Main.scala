@@ -26,7 +26,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .lowercaseColumns
     .convertToNone("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
-    .where($"country".isNotNull and $"employmentstatus".isNotNull)
+    .where('country.isNotNull and 'employmentstatus.isNotNull)
   
   // Test parsing the datasets
   PrintCollected(5) <~ dsInput.as[Bio]
