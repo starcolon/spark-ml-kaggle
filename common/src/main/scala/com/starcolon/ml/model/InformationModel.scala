@@ -22,7 +22,7 @@ abstract class InformationMetric extends InputResponse {
  * Mutual information of discrete inputs and outputs
  * I = Sumx Sumy { p(x,y) * log(p(x,y) / p(x)*p(y))}
  */
-class MutualInformation[T: TypeTag](override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
+class MutualInformation[T: Manifest](override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
   
   private def plog(x: T, y: T, df: Dataset[_]): Double = ???
 
