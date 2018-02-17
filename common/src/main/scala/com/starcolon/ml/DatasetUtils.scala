@@ -60,6 +60,10 @@ object DatasetUtils {
       }
     }
 
+    def distinctValues[T: Manifest](column: String): Seq[T] = {
+      df.select(column).distinct.rdd.map{_.getAs[T](0)}.collect
+    }
+
     def bucket(bins: Seq[Double]): Dataset[Row] = ???
   }
 

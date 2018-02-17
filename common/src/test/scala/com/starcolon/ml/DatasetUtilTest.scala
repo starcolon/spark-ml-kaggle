@@ -19,6 +19,7 @@ object DSTypes {
   case class A(i: Int, j: Int, k: Int)
   case class B(i: String, j: String, k: String)
   case class C(i: Double, j: Double, k: Double)
+  case class K(i: Int, s: String, ns: Seq[String], ms: Seq[Double])
 }
 
 class DatasetUtilTest extends SparkTestInstance with Matchers {
@@ -26,7 +27,7 @@ class DatasetUtilTest extends SparkTestInstance with Matchers {
   import spark.implicits._
   import DSTypes._
 
-  describe("Basic dataset utility"){
+  describe("seqFromColumns"){
 
     lazy val aa = A(1,2,3) :: A(0,1,1) :: A(3,4,5) :: A(0,-1,-1) :: Nil
     lazy val bb = B("a","bb","ccc") :: B("a","b","c") :: B("1","2","3") :: Nil
@@ -61,6 +62,39 @@ class DatasetUtilTest extends SparkTestInstance with Matchers {
         .rdd.map{_.getAs[Seq[Double]](0)}.collect
 
       nn should contain allOf(Seq(3.4, 4.5, 5.6), Seq(0,0,0), Seq(0,1.5,5.1))
+    }
+  }
+
+  describe("Distinct Values"){
+    lazy val kk = K(1, "one", Seq("a","b"), Seq.empty[Double]) ::
+                K(2, "two", Seq("a","b"), Seq(1.44)) ::
+                K(2, "two", Seq("a","b","c"), Seq(4.5, 3.5)) ::
+                K(3, "three", Seq.empty[String], Seq(1.65, 4.5)) :: 
+                Nil
+    lazy val dfK = kk.toDF
+
+    it("should collect distinct int values") {
+      val nn = dfK.distinctValues[Int]("i")
+      nn should have length(3)
+      nn should contain allOf(1,2,3)
+    }
+
+    it("should collect distinct string values") {
+      val nn = dfK.distinctValues[String]("s")
+      nn should have length(3)
+      nn should contain allOf("one","two","three")
+    }
+
+    it("should collect distinct array of string values") {
+      val nn = dfK.distinctValues[Seq[String]]("ns")
+      nn should have length(3)
+      nn should contain allOf(Seq("a","b"), Seq("a","b","c"), Nil)
+    }
+
+    it("should collect distinct array of double values") {
+      val nn = dfK.distinctValues[Seq[Double]]("ms")
+      nn should have length(4)
+      nn should contain allOf(Seq(1.44), Seq(4.5, 3.5), Seq(1.65, 4.5), Nil)
     }
   }
 
