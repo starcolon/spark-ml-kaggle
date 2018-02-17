@@ -15,17 +15,20 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, Vectors}
 import scala.collection.mutable.WrappedArray
 
-case class B(i: Option[Long], j: Option[String], k: Option[Double])
-case class C(i: Option[Long], j: Option[Seq[String]], k: Option[Double])
-case class D(i: Option[Long], j: Option[String], k: Option[Seq[Double]])
+object BasicTypes {
+  case class B(i: Option[Long], j: Option[String], k: Option[Double])
+  case class C(i: Option[Long], j: Option[Seq[String]], k: Option[Double])
+  case class D(i: Option[Long], j: Option[String], k: Option[Seq[Double]])
 
-case class V(i: Option[Double], j: Option[Double], k:Option[Double])
+  case class V(i: Option[Double], j: Option[Double], k:Option[Double])
 
-case class S(a: Seq[String], b: Seq[Double], c: Seq[Integer])
+  case class S(a: Seq[String], b: Seq[Double], c: Seq[Integer])
+}
 
 class BasicTest extends SparkTestInstance with Matchers {
 
   import spark.implicits._
+  import BasicTypes._
 
   describe("Basic Transformers"){
 
