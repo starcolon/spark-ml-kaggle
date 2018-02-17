@@ -24,35 +24,41 @@ abstract class InformationMetric extends InputResponse {
  */
 class MutualInformation[T: Manifest](override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
   
-  private def plog(x: T, y: T, df: Dataset[_]): Double = ???
+  private val plog = udf{(px: Double, py: Double, pxy: Double) =>
+    pxy * math.log(pxy / (px*py))
+  }
 
   override def ~(ds: Dataset[_]): Double = {
+    import ds.sparkSession.implicits._
     super.~(ds)
     val df = ds.toDF.seqFromColumns(inputColumns, "x").cache
-    // Find all distinct values of inputs and outputs
-    val X = df.distinctValues[Seq[T]]("x")
-    val Y = df.select(output).rdd.map(_.getAs[T](0)).distinct.collect
 
     val N = df.count.toDouble
     val pX = df.withColumn("n", lit(1D))
       .groupBy("x").agg(expr("sum(n) as n"))
-      .withColumn("p", 'n/lit(N))
-      .select("x","p")
+      .withColumn("pX", 'n/lit(N))
+      .select("x","pX")
       .cache
 
     val pY = df.withColumn("n", lit(1D))
       .groupBy(output).agg(expr("sum(n) as n"))
-      .withColumn("p", 'n/lit(N))
-      .select(output, "p")
+      .withColumn("pY", 'n/lit(N))
+      .select(output, "pY")
       .cache
 
     val pXY = df.withColumn("n", lit(1D))
       .groupBy("x", output).agg(expr("sum(n) as n"))
       .withColumn("p", 'n/lit(N))
-      .select("x", output, "p")
+      .select("x", output, "pXY")
       .cache
 
-    ???
+    pXY
+      .join(pX, "x" :: Nil)
+      .join(pY, output :: Nil)
+      .withColumn("p", plog('pX, 'pY, 'pXY))
+      .select("p")
+      .rdd.map{_.getAs[Double](0)}
+      .sum
   }
 }
 
