@@ -28,10 +28,29 @@ class MutualInformation[T: Manifest](override val inputColumns: Seq[String], ove
 
   override def ~(ds: Dataset[_]): Double = {
     super.~(ds)
-    val df = ds.toDF
+    val df = ds.toDF.seqFromColumns(inputColumns, "x").cache
     // Find all distinct values of inputs and outputs
-    val X = df.seqFromColumns(inputColumns, "x").select("x").rdd.map(_.getAs[Seq[T]](0)).distinct.collect
+    val X = df.distinctValues[Seq[T]]("x")
     val Y = df.select(output).rdd.map(_.getAs[T](0)).distinct.collect
+
+    val N = df.count.toDouble
+    val pX = df.withColumn("n", lit(1D))
+      .groupBy("x").agg(expr("sum(n) as n"))
+      .withColumn("p", 'n/lit(N))
+      .select("x","p")
+      .cache
+
+    val pY = df.withColumn("n", lit(1D))
+      .groupBy(output).agg(expr("sum(n) as n"))
+      .withColumn("p", 'n/lit(N))
+      .select(output, "p")
+      .cache
+
+    val pXY = df.withColumn("n", lit(1D))
+      .groupBy("x", output).agg(expr("sum(n) as n"))
+      .withColumn("p", 'n/lit(N))
+      .select("x", output, "p")
+      .cache
 
     ???
   }
