@@ -22,7 +22,7 @@ abstract class InformationMetric extends InputResponse {
  * Mutual information of discrete inputs and outputs
  * I = Sumx Sumy { p(x,y) * log(p(x,y) / p(x)*p(y))}
  */
-class MutualInformation[T: Manifest](override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
+class MutualInformation(override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
   
   private val plog = udf{(px: Double, py: Double, pxy: Double) =>
     pxy * math.log(pxy / (px*py))
@@ -33,34 +33,50 @@ class MutualInformation[T: Manifest](override val inputColumns: Seq[String], ove
     super.~(ds)
     val df = ds.toDF.seqFromColumns(inputColumns, "x").cache
 
+    // TAODEBUG:
+    println("------ test ------")
+    df.peek("df")
+
     val N = df.count.toDouble
     val pX = df.withColumn("n", lit(1D))
       .groupBy("x").agg(expr("sum(n) as n"))
       .withColumn("pX", 'n/lit(N))
       .select("x","pX")
       .cache
+      .peek("pX")
 
     val pY = df.withColumn("n", lit(1D))
       .groupBy(output).agg(expr("sum(n) as n"))
       .withColumn("pY", 'n/lit(N))
       .select(output, "pY")
       .cache
+      .peek("pY")
 
     val pXY = df.withColumn("n", lit(1D))
       .groupBy("x", output).agg(expr("sum(n) as n"))
       .withColumn("p", 'n/lit(N))
       .select("x", output, "pXY")
       .cache
+      .peek("pXY")
 
     pXY
       .join(pX, "x" :: Nil)
       .join(pY, output :: Nil)
       .withColumn("p", plog('pX, 'pY, 'pXY))
+      .peek("p-all")
       .select("p")
       .rdd.map{_.getAs[Double](0)}
       .sum
   }
 }
 
+class JointEntropy(override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
+  
+  override def ~(ds: Dataset[_]): Double = {
+    import ds.sparkSession.implicits._
+    super.~(ds)
+    ???
+  }
+}
 
 

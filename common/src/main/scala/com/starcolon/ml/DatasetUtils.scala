@@ -37,10 +37,24 @@ object DatasetUtils {
     def dropMultiple(cols: Seq[String]): Dataset[Row] = 
       cols.foldLeft(df){case(d,c) => d.drop(c)}
 
+    def peek(title: String, cols: Seq[String] = Nil): Dataset[Row] = {
+      val N = 40
+      println("•" * N)
+      print(" " * ((N-title.size)/2))
+      print(title)
+      println("•" * N)
+      cols match {
+        case Nil => df.show(20, false)
+        case _ => df.select(cols.head, cols.tail:_*).show(20, false)
+      }
+      df
+    }
+
     def seqFromColumns(cols: Seq[String], target: String): Dataset[Row] = {
       val t = df.schema(cols.head).dataType
-      require(cols.tail.map(c => df.schema(c).dataType == t).reduce(_ && _),
-        s"All columns (${cols.mkString(", ")}) have to be of the same type.")
+      if (cols.size > 1)
+        require(cols.tail.map(c => df.schema(c).dataType == t).reduce(_ && _),
+          s"All columns (${cols.mkString(", ")}) have to be of the same type.")
 
       val df_ = t match {
         case IntegerType => df.withColumn(target, initialIntArray())

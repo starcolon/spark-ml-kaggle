@@ -37,6 +37,15 @@ class DatasetUtilTest extends SparkTestInstance with Matchers {
     lazy val dfB = bb.toDF
     lazy val dfC = cc.toDF
 
+    it("should create a column of array from single scalar column"){
+      val nn = dfA
+        .seqFromColumns(Seq("i"), "x")
+        .select("x")
+        .rdd.map{_.getAs[Seq[Int]](0)}.collect
+
+      nn should contain allOf(Seq(1), Seq(0), Seq(3))
+    }
+
     it("should create a column of array (of Integer) from multiple columns"){
       val nn = dfA
         .seqFromColumns(Seq("i","j","k"), "x")
