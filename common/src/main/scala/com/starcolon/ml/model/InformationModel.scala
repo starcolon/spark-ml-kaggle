@@ -33,10 +33,6 @@ class MutualInformation(override val inputColumns: Seq[String], override val out
     super.~(ds)
     val df = ds.toDF.seqFromColumns(inputColumns, "x").cache
 
-    // TAODEBUG:
-    println("------ test ------")
-    df.peek("df")
-
     val N = df.count.toDouble
     val pX = df.withColumn("n", lit(1D))
       .groupBy("x").agg(expr("sum(n) as n"))
@@ -54,7 +50,7 @@ class MutualInformation(override val inputColumns: Seq[String], override val out
 
     val pXY = df.withColumn("n", lit(1D))
       .groupBy("x", output).agg(expr("sum(n) as n"))
-      .withColumn("p", 'n/lit(N))
+      .withColumn("pXY", 'n/lit(N))
       .select("x", output, "pXY")
       .cache
       .peek("pXY")
