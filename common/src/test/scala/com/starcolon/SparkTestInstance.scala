@@ -7,12 +7,19 @@ import org.apache.spark.util.Utils
 import org.scalatest._
 
 trait SparkTestInstance extends FunSpec with BeforeAndAfterAll {
-  implicit lazy val spark = {
-    SparkSession.builder
+  private def getSparkInstance = {
+    val instance = SparkSession.builder
       .master("local")
       .appName("MLTest")
       .getOrCreate()
+
+    instance.sparkContext.setLogLevel("ERROR")
+    instance
   }
+
+  lazy val spark = getSparkInstance
+
+  implicit def sparkDef = spark
 
   override def afterAll() {
     try {

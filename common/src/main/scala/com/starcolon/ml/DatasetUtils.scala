@@ -39,10 +39,10 @@ object DatasetUtils {
 
     def peek(title: String, cols: Seq[String] = Nil): Dataset[Row] = {
       val N = 40
-      println("•" * N)
+      println("–" * N)
       print(" " * ((N-title.size)/2))
-      print(title)
-      println("•" * N)
+      println(title)
+      println("–" * N)
       cols match {
         case Nil => df.show(20, false)
         case _ => df.select(cols.head, cols.tail:_*).show(20, false)
