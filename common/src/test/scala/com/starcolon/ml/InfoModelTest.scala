@@ -24,6 +24,7 @@ class InfoModelTest extends SparkTestInstance with Matchers {
 
   import spark.implicits._
   import InfoTypes._
+  import TestImplicits._
 
   lazy val aa = A("a","00","T") ::
               A("a","11","T") ::
@@ -45,7 +46,6 @@ class InfoModelTest extends SparkTestInstance with Matchers {
     it("should compute mutual information of single column"){
       val mi = new MutualInformation("x1" :: Nil, "y")
 
-
       // +---+---+-------------------+-------------------+-------------------+--------------------+
       // |y  |x  |pXY                |pX                 |pY                 |p                   |
       // +---+---+-------------------+-------------------+-------------------+--------------------+
@@ -55,8 +55,8 @@ class InfoModelTest extends SparkTestInstance with Matchers {
       // |T  |[b]|0.15384615384615385|0.6153846153846154 |0.46153846153846156|-0.09432376505944753|
       // +---+---+-------------------+-------------------+-------------------+--------------------+
 
-      val d = mi ~ dfA
-      d shouldBe 2.5
+      val d: Double = mi ~ dfA
+      (d ~= 0.15) shouldBe true
     }
 
     it("should compute mutual information of multiple columns"){
