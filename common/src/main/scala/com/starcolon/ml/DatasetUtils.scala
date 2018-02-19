@@ -37,15 +37,17 @@ object DatasetUtils {
     def dropMultiple(cols: Seq[String]): Dataset[Row] = 
       cols.foldLeft(df){case(d,c) => d.drop(c)}
 
-    def peek(title: String, cols: Seq[String] = Nil): Dataset[Row] = {
-      val N = 40
-      println("–" * N)
-      print(" " * ((N-title.size)/2))
-      println(title)
-      println("–" * N)
-      cols match {
-        case Nil => df.show(20, false)
-        case _ => df.select(cols.head, cols.tail:_*).show(20, false)
+    def peek(title: String, cols: Seq[String] = Nil, debug: Boolean = true): Dataset[Row] = {
+      if (debug){
+        val N = 40
+        println("–" * N)
+        print(" " * ((N-title.size)/2))
+        println(title)
+        println("–" * N)
+        cols match {
+          case Nil => df.show(20, false)
+          case _ => df.select(cols.head, cols.tail:_*).show(20, false)
+        }  
       }
       df
     }

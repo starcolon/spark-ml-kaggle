@@ -60,7 +60,11 @@ class InfoModelTest extends SparkTestInstance with Matchers {
     }
 
     it("should compute mutual information of multiple columns"){
+      val mi = new MutualInformation("x1" :: "x2" :: Nil, "y", debug = true)
 
+
+      // TAOTODO:
+      val d: Double = mi ~ dfA
     }
   }
 }

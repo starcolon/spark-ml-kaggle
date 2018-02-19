@@ -22,7 +22,7 @@ abstract class InformationMetric extends InputResponse {
  * Mutual information of discrete inputs and outputs
  * I = Sumx Sumy { p(x,y) * log(p(x,y) / p(x)*p(y))}
  */
-class MutualInformation(override val inputColumns: Seq[String], override val output: String) extends InformationMetric {
+class MutualInformation(override val inputColumns: Seq[String], override val output: String, debug: Boolean = false) extends InformationMetric {
   
   private val plog = udf{(px: Double, py: Double, pxy: Double) =>
     pxy * math.log(pxy / (px*py))
@@ -39,27 +39,27 @@ class MutualInformation(override val inputColumns: Seq[String], override val out
       .withColumn("pX", 'n/lit(N))
       .select("x","pX")
       .cache
-      .peek("pX")
+      .peek("pX", debug=debug)
 
     val pY = df.withColumn("n", lit(1D))
       .groupBy(output).agg(expr("sum(n) as n"))
       .withColumn("pY", 'n/lit(N))
       .select(output, "pY")
       .cache
-      .peek("pY")
+      .peek("pY", debug=debug)
 
     val pXY = df.withColumn("n", lit(1D))
       .groupBy("x", output).agg(expr("sum(n) as n"))
       .withColumn("pXY", 'n/lit(N))
       .select("x", output, "pXY")
       .cache
-      .peek("pXY")
+      .peek("pXY", debug=debug)
 
     pXY
       .join(pX, "x" :: Nil)
       .join(pY, output :: Nil)
       .withColumn("p", plog('pX, 'pY, 'pXY))
-      .peek("p-all")
+      .peek("p-all", debug=debug)
       .select("p")
       .rdd.map{_.getAs[Double](0)}
       .sum
