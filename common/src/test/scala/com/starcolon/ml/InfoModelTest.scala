@@ -59,7 +59,7 @@ class InfoModelTest extends SparkTestInstance with Matchers {
       (d ~= 0.15) shouldBe true
     }
 
-    it("should compute mutual information of multiple columns"){
+    ignore("should compute mutual information of multiple columns"){
       val mi = new MutualInformation("x1" :: "x2" :: Nil, "y", debug = true)
 
       // +---+-------+-------------------+-------------------+-------------------+---------------------+

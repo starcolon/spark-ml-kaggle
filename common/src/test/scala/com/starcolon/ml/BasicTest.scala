@@ -193,6 +193,27 @@ class BasicTest extends SparkTestInstance with Matchers {
       res should not contain (5)
     }
 
+    it("should encode string array with array encoder"){
+      
+      val encoder = new StringArrayEncoder().setInputCol("a").setOutputCol("v")
+      val df_ = new Pipeline().setStages(Array(encoder)).fit(dfS).transform(dfS)
+      
+      // +---------+---------------+------------+---------------+
+      // |        a|              b|           c|              v|
+      // +---------+---------------+------------+---------------+
+      // |       []|             []|          []|[0.0, 0.0, 0.0]|
+      // |   [a, b]|[0.1, 0.2, 0.5]|      [0, 1]|[1.0, 1.0, 0.0]|
+      // |   [b, c]|          [0.2]|[0, 3, 4, 5]|[0.0, 1.0, 1.0]|
+      // |[c, c, c]|[0.0, 0.1, 0.0]|   [3, 4, 5]|[0.0, 0.0, 3.0]|
+      // +---------+---------------+------------+---------------+
+
+      val res = df_
+        .select("v")
+        .rdd.map(_.getAs[Seq[Double]](0))
+        .collect
+
+      res(0) shouldBe (Seq(0D, 0D, 0D))
+    }
 
   }
 

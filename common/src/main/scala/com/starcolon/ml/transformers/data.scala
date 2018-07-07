@@ -66,7 +66,7 @@ with DefaultParamsWritable {
   def setValue(value: String): this.type = set(delimiter, value)
 }
 
-// TAOTODO: Add string array encoder
+// String array encoder
 // which maps [[Array[String]]] => [[Array[Int]]] at fixed length
 // where the length of the final array is the number of distinct possible string values
 
