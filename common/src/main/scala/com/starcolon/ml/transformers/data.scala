@@ -36,6 +36,9 @@ with DefaultParamsWritable {
   def getImputedValue: T = $(newValue)
 }
 
+/**
+ * A transformer which splits a string by a specified delimiter into an array of string
+ */
 class StringSplitter(override val uid: String = Identifiable.randomUID("StringSplitterTransformer"))
 extends Transformer 
 with HasInputColsExposed
@@ -61,6 +64,46 @@ with DefaultParamsWritable {
   final val delimiter = new Param[String](this, "delimiter", "String delimiter")
   setDefault(delimiter, ",")
   def setValue(value: String): this.type = set(delimiter, value)
+}
+
+// TAOTODO: Add string array encoder
+// which maps [[Array[String]]] => [[Array[Int]]] at fixed length
+// where the length of the final array is the number of distinct possible string values
+
+class StringArrayEncoder(override val uid: String = Identifiable.randomUID("StringArrayEncoder"))
+extends Transformer
+with HasInputColExposed
+with HasOutputColExposed
+with DefaultParamsWritable {
+  override def copy(extra: ParamMap): this.type = defaultCopy(extra)
+
+  override def transformSchema(schema: StructType) = 
+    schema.add($(outputCol), ArrayType(DoubleType, true), true)
+
+  def setInputCol(value: String): this.type = set(inputCol, value)
+  def setOutputCol(value: String): this.type = set(outputCol, value)
+
+  override def transform(df: Dataset[_]): Dataset[Row] = {
+    transformSchema(df.schema, logging=true)
+    // Collect all possible values
+    val sampleSet = df
+      .select(explode(col($(inputCol))).as("v"))
+      .dropDuplicates
+      .orderBy("v")
+      .rdd.map(_.getAs[String](0))
+      .collect
+
+    // TAODEBUG:
+    println(Console.CYAN + 
+      "All possible values : " + 
+      sampleSet.mkString(", ") + Console.RESET)
+    
+    val encode = udf{ ns: Seq[String] => 
+      if (ns == null) sampleSet.map(_ => 0D)
+      else sampleSet.map(s => ns.count(_ == s).toDouble)
+    }
+    df.withColumn($(outputCol), encode(col($(inputCol))))
+  }
 }
 
 /**
