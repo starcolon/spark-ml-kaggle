@@ -39,11 +39,15 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .setInputCols(Array("professional", "formaleducation", "university"))
 
   val stringSplitter = new StringSplitter()
-    .setInputCols(Array("learningnewtech"))
+    .setInputCols(Array("learningnewtech","formaleducation"))
 
   val stringArrayIndexer = new ArrayEncoder[String]()
     .setInputCol("learningnewtech")
     .setOutputCol("learningnewtech_array")
+
+  val featureVectorConcat = new VectorAssembler()
+    .setInputCols(Array("learningnewtech"))
+    .setOutputCol("feature")
 
   // val featureReport = new FeatureVsTargetReport()
   //   .setInputCols(Array("professional","formaleducation"))
