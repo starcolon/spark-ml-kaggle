@@ -26,16 +26,42 @@ object Scaler {
 }
 
 object Silo {
+
+  def getOutCol(inputCol: String, as: OutputCol) = as match {
+    case OutputCol.Inplace => inputCol
+    case OutputCol.As(c) => c
+  }
+
   class DatasetOps(implicit df: Dataset[_]){
     def ->(silo: DataSiloT) = silo.f(df)
   }
 
-  case class SplitString(inputCol: String, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-    override def f(input: Dataset[_]) = ???
+  case class SplitString(inputCol: String, delimiter: String = ",", as: OutputCol = OutputCol.Inplace) extends DataSiloT {
+    override def f(input: Dataset[_]) = {
+      require(input.schema(inputCol).dataType == StringType)
+      val out = getOutCol(inputCol, as)
+      val split = udf{ s: String => s.split(delimiter) }
+      input.withColumn(out, split(col(inputCol)))
+    }
   }
 
   case class ArrayConcat(cols: Seq[String], as: OutputCol.As) extends DataSiloT {
-    override def f(input: Dataset[_]) = ???
+    override def f(input: Dataset[_]) = {
+      val types = cols.map(c => input.schema(c).dataType).toSet
+      require(types.size == 1)
+      val OutputCol.As(out) = as
+      val concatInt = udf{(x: Seq[Int], y: Seq[Int]) => x ++ y}
+      val concatLong = udf{(x: Seq[Long], y: Seq[Long]) => x ++ y}
+      val concatDouble = udf{(x: Seq[Double], y: Seq[Double]) => x ++ y}
+      val concatUdf = types.head match {
+        case IntegerType => concatInt
+        case LongType => concatLong
+        case DoubleType => concatDouble
+      }
+      cols.tail.foldLeft(input.withColumn(out, col(cols.head))){
+        (d,c) => d.withColumn(out, concatUdf(col(c), col(out))) 
+      }
+    }
   }
 
   case class ArrayScaler(inputCol: String, scaler: Scaler, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
