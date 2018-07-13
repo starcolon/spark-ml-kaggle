@@ -17,6 +17,14 @@ object OutputCol {
   def as(c: String) = As(c)
 }
 
+trait Scaler 
+
+object Scaler {
+  case class Ratio(c: Double) extends Scaler
+  case class ElementWiseNorm(n: Int) extends Scaler
+  case class MinMaxCut(min: Option[Double], max: Option[Double]) extends Scaler
+}
+
 object Silo {
   class DatasetOps(implicit df: Dataset[_]){
     def ->(silo: DataSiloT) = silo.f(df)
@@ -29,5 +37,11 @@ object Silo {
   case class ArrayConcat(cols: Seq[String], as: OutputCol.As) extends DataSiloT {
     override def f(input: Dataset[_]) = ???
   }
+
+  case class ArrayScaler(inputCol: String, scaler: Scaler, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
+    override def f(input: Dataset[_]) = ???
+  }
+
+
 }
 
