@@ -54,9 +54,9 @@ object Silo {
       val concatLong = udf{(x: Seq[Long], y: Seq[Long]) => x ++ y}
       val concatDouble = udf{(x: Seq[Double], y: Seq[Double]) => x ++ y}
       val concatUdf = types.head match {
-        case IntegerType => concatInt
-        case LongType => concatLong
-        case DoubleType => concatDouble
+        case ArrayType(IntegerType,_) => concatInt
+        case ArrayType(LongType,_) => concatLong
+        case ArrayType(DoubleType,_) => concatDouble
       }
       cols.tail.foldLeft(input.withColumn(out, col(cols.head))){
         (d,c) => d.withColumn(out, concatUdf(col(c), col(out))) 
