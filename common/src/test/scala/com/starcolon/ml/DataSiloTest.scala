@@ -62,7 +62,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
       dfOut.schema("w").dataType shouldBe(ArrayType(IntegerType, false))
       dfOut.select("w").rdd.map(_.getAs[Seq[Int]](0)).collect shouldBe(Seq(
         Seq(1,2,3,1,2,3),
-        Seq(3,2,1,1,2,3)
+        Seq(1,2,3,3,2,1)
       ))
     }
 
@@ -71,6 +71,10 @@ class DataSiloTest extends SparkTestInstance with Matchers {
       val dfOut = concat.f(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c","w"))
       dfOut.schema("w").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("w").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(4.0, 5.0),
+        Seq(0.0, -0.1, -0.2, -0.3)
+      ))
     }
   }
 }

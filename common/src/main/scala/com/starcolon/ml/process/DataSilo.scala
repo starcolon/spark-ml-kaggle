@@ -59,7 +59,7 @@ object Silo {
         case ArrayType(DoubleType,_) => concatDouble
       }
       cols.tail.foldLeft(input.withColumn(out, col(cols.head))){
-        (d,c) => d.withColumn(out, concatUdf(col(c), col(out))) 
+        (d,c) => d.withColumn(out, concatUdf(col(out), col(c))) 
       }
     }
   }
