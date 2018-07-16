@@ -22,7 +22,7 @@ trait Scaler
 
 object Scaler {
   case class Ratio(c: Double) extends Scaler
-  case class ElementWiseNorm(n: Int) extends Scaler
+  case class DivisionByNorm(n: Int) extends Scaler
   case class MinMaxCut(min: Option[Double], max: Option[Double]) extends Scaler
 }
 
@@ -74,6 +74,14 @@ object Silo {
       val scaleLong = udf{(s: Double, in: Seq[Long]) => in.map(_ * s)}
       val scaleDouble = udf{(s: Double, in: Seq[Double]) => in.map(_ * s)}
 
+      val cutInt = udf{(a: Double, b: Double, in: Seq[Int]) => minMaxCutArray(a,b,in)}
+      val cutLong = udf{(a: Double, b: Double, in: Seq[Long]) => minMaxCutArray(a,b,in)}
+      val cutDouble = udf{(a: Double, b: Double, in: Seq[Double]) => minMaxCutArray(a,b,in)}
+
+      val normInt = udf{(n: Int, in: Seq[Int]) => norm(in, n)}
+      val normLong = udf{(n: Int, in: Seq[Long]) => norm(in, n)}
+      val normDouble = udf{(n: Int, in: Seq[Double]) => norm(in, n)}
+
       scaler match {
         case Scaler.Ratio(r) => 
           val rl = lit(r)
@@ -82,11 +90,30 @@ object Silo {
             case LongType => input.withColumn(output, scaleLong(rl, col(inputCol)))
             case DoubleType => input.withColumn(output, scaleDouble(rl, col(inputCol)))
           }
-        case Scaler.ElementWiseNorm(n) => 
-          ???
+
+        case Scaler.DivisionByNorm(n) => 
+          val nl = lit(n)
+          val TEMP = scala.util.Random.nextInt.toString
+          (dataType match {
+            case IntegerType => input
+              .withColumn(TEMP, lit(1D)/normInt(nl, col(inputCol)))
+              .withColumn(output, scaleInt(col(TEMP), col(inputCol)))
+            case LongType => input
+              .withColumn(TEMP, lit(1D)/normLong(nl, col(inputCol)))
+              .withColumn(output, scaleLong(col(TEMP), col(inputCol)))
+            case DoubleType => input
+              .withColumn(TEMP, lit(1D)/normDouble(nl, col(inputCol)))
+              .withColumn(output, scaleDouble(col(TEMP), col(inputCol)))
+          }).drop(TEMP)
           
         case Scaler.MinMaxCut(a,b) => 
-          ???
+          val _min = lit(a.getOrElse(Double.NegativeInfinity))
+          val _max = lit(b.getOrElse(Double.PositiveInfinity))
+          dataType match {
+            case IntegerType => input.withColumn(output, cutInt(_min, _max, col(inputCol)))
+            case LongType => input.withColumn(output, cutLong(_min, _max, col(inputCol)))
+            case DoubleType => input.withColumn(output, cutDouble(_min, _max, col(inputCol)))
+          }
       }
     }
   }

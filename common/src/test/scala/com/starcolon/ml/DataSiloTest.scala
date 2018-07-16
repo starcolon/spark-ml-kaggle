@@ -78,14 +78,43 @@ class DataSiloTest extends SparkTestInstance with Matchers {
     }
 
     it("should scale arrays - Int Array"){
-      ???
+      val scale = ArrayScaler("a", Scaler.Ratio(50), Inplace)
+      val dfOut = scale.f(dfU2)
+      dfOut.columns shouldBe(Seq("a","b","c"))
+      dfOut.schema("a").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("a").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(50D,100D,150D),
+        Seq(150D,100D,50D)
+      ))
+    }
+
+    it("should scale arrays - Double Array"){
+      val scale = ArrayScaler("c", Scaler.Ratio(-5), Inplace)
+      val dfOut = scale.f(dfU2)
+      dfOut.columns shouldBe(Seq("a","b","c"))
+      dfOut.schema("c").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("c").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Nil,
+        Seq(1,1.5)
+      ))
+    }
+
+    it("should scale arrays - Norm"){
+      val scale = ArrayScaler("b", Scaler.DivisionByNorm(2), Inplace)
+      val dfOut = scale.f(dfU2)
+      dfOut.columns shouldBe(Seq("a","b","c"))
+      dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(0.62469504755442429, 0.78086880944303039),
+        Seq(0,-1.0)
+      ))
     }
   }
 
   describe("Chained operations"){
 
     it("should chain the operations"){
-      ???
+      
     }
 
   }
