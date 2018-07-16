@@ -76,5 +76,17 @@ class DataSiloTest extends SparkTestInstance with Matchers {
         Seq(0.0, -0.1, -0.2, -0.3)
       ))
     }
+
+    it("should scale arrays - Int Array"){
+      ???
+    }
+  }
+
+  describe("Chained operations"){
+
+    it("should chain the operations"){
+      ???
+    }
+
   }
 }

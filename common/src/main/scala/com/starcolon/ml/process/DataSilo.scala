@@ -4,6 +4,7 @@ import org.apache.spark.sql.{SparkSession, Dataset, Row}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
+import com.starcolon.ml.NumberUtils._
 
 trait DataSiloT extends Serializable {
   def f(input: Dataset[_]): Dataset[_]
@@ -65,7 +66,29 @@ object Silo {
   }
 
   case class ArrayScaler(inputCol: String, scaler: Scaler, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-    override def f(input: Dataset[_]) = ???
+    override def f(input: Dataset[_]) = {
+      val output = getOutCol(inputCol, as)
+      val ArrayType(dataType,_) = input.schema(inputCol).dataType
+      
+      val scaleInt = udf{(s: Double, in: Seq[Int]) => in.map(_ * s)}
+      val scaleLong = udf{(s: Double, in: Seq[Long]) => in.map(_ * s)}
+      val scaleDouble = udf{(s: Double, in: Seq[Double]) => in.map(_ * s)}
+
+      scaler match {
+        case Scaler.Ratio(r) => 
+          val rl = lit(r)
+          dataType match {
+            case IntegerType => input.withColumn(output, scaleInt(rl, col(inputCol)))
+            case LongType => input.withColumn(output, scaleLong(rl, col(inputCol)))
+            case DoubleType => input.withColumn(output, scaleDouble(rl, col(inputCol)))
+          }
+        case Scaler.ElementWiseNorm(n) => 
+          ???
+          
+        case Scaler.MinMaxCut(a,b) => 
+          ???
+      }
+    }
   }
 
 
