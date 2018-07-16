@@ -109,6 +109,39 @@ class DataSiloTest extends SparkTestInstance with Matchers {
         Seq(0,-1.0)
       ))
     }
+
+    it("should min max cut arrays, open min"){
+      val cut = ArrayScaler("b", Scaler.MinMaxCut(None, Some(4.5)), Inplace)
+      val dfOut = cut.f(dfU2)
+      dfOut.columns shouldBe(Seq("a","b","c"))
+      dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(4D, 4.5D),
+        Seq(0.0,-0.1)
+      ))
+    }
+
+    it("should min max cut arrays, open max"){
+      val cut = ArrayScaler("b", Scaler.MinMaxCut(Some(-0.5D), None), Inplace)
+      val dfOut = cut.f(dfU2)
+      dfOut.columns shouldBe(Seq("a","b","c"))
+      dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(4D, 5D),
+        Seq(0D, -0.1D)
+      ))
+    }
+
+    it("should min max cut arrays"){
+      val cut = ArrayScaler("b", Scaler.MinMaxCut(Some(0), Some(4D)), Inplace)
+      val dfOut = cut.f(dfU2)
+      dfOut.columns shouldBe(Seq("a","b","c"))
+      dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(4D, 4D),
+        Seq(0D, 0D)
+      ))
+    }
   }
 
   describe("Chained operations"){
