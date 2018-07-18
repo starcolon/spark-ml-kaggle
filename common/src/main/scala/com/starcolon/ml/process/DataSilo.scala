@@ -29,13 +29,14 @@ object Scaler {
 trait Aggregator
 
 object Aggregator {
-  case class Sum extends Aggregator
-  case class Min extends Aggregator
-  case class Max extends Aggregator
-  case class Avg extends Aggregator
-  case class Std extends Aggregator
-  case class Var extends aggregator
-  case class Rms extends Aggregator
+  case object Sum extends Aggregator
+  case object Min extends Aggregator
+  case object Max extends Aggregator
+  case object Avg extends Aggregator
+  case object Std extends Aggregator
+  case object Var extends Aggregator
+  case object Rms extends Aggregator
+  case class Norm(n: Int) extends Aggregator { require(n > 0) }
 }
 
 object Silo {
