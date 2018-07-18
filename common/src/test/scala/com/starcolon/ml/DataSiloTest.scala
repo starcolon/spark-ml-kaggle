@@ -20,6 +20,7 @@ import scala.collection.mutable.WrappedArray
 object SampleTypes {
   case class U(a: String)
   case class U2(a: Seq[Int], b: Seq[Double], c: Seq[Double])
+  case class U3(a: Seq[Double], b: Seq[Double])
 }
 
 class DataSiloTest extends SparkTestInstance with Matchers {
@@ -36,8 +37,13 @@ class DataSiloTest extends SparkTestInstance with Matchers {
   lazy val u2 = U2(Seq(1,2,3), Seq(4.0,5.0), Nil) ::
                 U2(Seq(3,2,1), Seq(0.0,-0.1), Seq(-0.2,-0.3)) :: Nil
 
+  lazy val u3 = U3(Seq(0,0,0), Seq(25)) ::
+                U3(Seq(-1,0,1),  Seq(10)) :: 
+                U3(Nil, Seq(5,-10,5)) :: Nil
+
   lazy val dfU = uu.toDF
   lazy val dfU2 = u2.toDF
+  lazy val dfU3 = u3.toDF
 
   describe("Basic silo"){
 
@@ -147,7 +153,17 @@ class DataSiloTest extends SparkTestInstance with Matchers {
   describe("Chained operations"){
 
     it("should chain the operations"){
+      val scale  = ArrayScaler("b", Scaler.Ratio(0.2), Inplace)
+      val cut    = ArrayScaler("a", Scaler.MinMaxCut(Some(0), None), Inplace)
+      val concat = ArrayConcat(Seq("b","a"), As("w"))
       
+      val dfOut  = dfU3 $ scale $ cut $ concat
+      dfOut.schema("w").dataType shouldBe(ArrayType(DoubleType, false))
+      dfOut.select("w").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
+        Seq(5,0,0,0),
+        Seq(2,0,0,1),
+        Seq(1,-2,1)
+      ))
     }
 
   }

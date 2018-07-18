@@ -33,8 +33,8 @@ object Silo {
     case OutputCol.As(c) => c
   }
 
-  class DatasetOps(implicit df: Dataset[_]){
-    def ->(silo: DataSiloT) = silo.f(df)
+  implicit class DatasetOps(val df: Dataset[_]){
+    def $(silo: DataSiloT) = silo.f(df)
   }
 
   case class SplitString(inputCol: String, delimiter: String = ",", as: OutputCol = OutputCol.Inplace) extends DataSiloT {
