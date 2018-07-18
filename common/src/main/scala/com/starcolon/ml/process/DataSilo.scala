@@ -26,6 +26,18 @@ object Scaler {
   case class MinMaxCut(min: Option[Double], max: Option[Double]) extends Scaler
 }
 
+trait Aggregator
+
+object Aggregator {
+  case class Sum extends Aggregator
+  case class Min extends Aggregator
+  case class Max extends Aggregator
+  case class Avg extends Aggregator
+  case class Std extends Aggregator
+  case class Var extends aggregator
+  case class Rms extends Aggregator
+}
+
 object Silo {
 
   def getOutCol(inputCol: String, as: OutputCol) = as match {
@@ -114,6 +126,15 @@ object Silo {
             case LongType => input.withColumn(output, cutLong(_min, _max, col(inputCol)))
             case DoubleType => input.withColumn(output, cutDouble(_min, _max, col(inputCol)))
           }
+      }
+    }
+
+    case class Aggregation(inputCol: String, aggregator: Aggregator, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
+      override def f(input: Dataset[_]) = {
+        val output = getOutCol(inputCol, as)
+        val ArrayType(dataType,_) = input.schema(inputCol).dataType
+
+        ???
       }
     }
   }
