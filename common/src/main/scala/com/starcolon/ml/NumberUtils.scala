@@ -19,6 +19,11 @@ object NumberUtils {
     math.pow(d, 1/n.toDouble)
   }
 
+  def mean[T: Numeric](arr: Seq[T]) = {
+    require(!arr.isEmpty)
+    implicitly[Numeric[T]].toDouble(arr.sum)/arr.size.toDouble
+  }
+
   def minCutArray[T: Numeric](t: Double, arr: Seq[T]) = {
     arr.map{ a => math.max(implicitly[Numeric[T]].toDouble(a), t) }
   }

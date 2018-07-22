@@ -4,7 +4,7 @@ import org.apache.spark.sql.{SparkSession, Dataset, Row}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
-import com.starcolon.ml.NumberUtils._
+import com.starcolon.ml.{NumberUtils => NU}
 
 trait DataSiloT extends Serializable {
   def f(input: Dataset[_]): Dataset[_]
@@ -26,17 +26,30 @@ object Scaler {
   case class MinMaxCut(min: Option[Double], max: Option[Double]) extends Scaler
 }
 
-trait Aggregator
+trait Aggregator {
+  def f[T: Numeric](arr: Seq[T]): Option[Double]
+}
 
 object Aggregator {
-  case object Sum extends Aggregator
-  case object Min extends Aggregator
-  case object Max extends Aggregator
-  case object Avg extends Aggregator
-  case object Std extends Aggregator
-  case object Var extends Aggregator
-  case object Rms extends Aggregator
-  case class Norm(n: Int) extends Aggregator { require(n > 0) }
+  case object Sum extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = if (arr.isEmpty) None else Some(implicitly[Numeric[T]].toDouble(arr.sum)) }
+  case object Min extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = if (arr.isEmpty) None else Some(implicitly[Numeric[T]].toDouble(arr.min)) }
+  case object Max extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = if (arr.isEmpty) None else Some(implicitly[Numeric[T]].toDouble(arr.max)) }
+  case object Avg extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = if (arr.isEmpty) None else Some(implicitly[Numeric[T]].toDouble(arr.sum)/arr.size.toDouble) }
+  case object Std extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = Var.f(arr).map(math.sqrt) }
+  case object Var extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = 
+    arr match {
+      case Nil => None
+      case _ => 
+        val m = NU.mean(arr)
+        Some(arr.foldLeft(0D){(d,a) => d + math.pow(implicitly[Numeric[T]].toDouble(a)-m,2)}/arr.size.toDouble)
+    } 
+  }
+  case object Rms extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = ??? }
+  case class Norm(n: Int) extends Aggregator { 
+    require(n > 0) 
+    override def f[T: Numeric](arr: Seq[T]) = 
+      if (arr.isEmpty) None else Some(NU.norm(arr, n))
+  }
 }
 
 object Silo {
@@ -87,13 +100,13 @@ object Silo {
       val scaleLong = udf{(s: Double, in: Seq[Long]) => in.map(_ * s)}
       val scaleDouble = udf{(s: Double, in: Seq[Double]) => in.map(_ * s)}
 
-      val cutInt = udf{(a: Double, b: Double, in: Seq[Int]) => minMaxCutArray(a,b,in)}
-      val cutLong = udf{(a: Double, b: Double, in: Seq[Long]) => minMaxCutArray(a,b,in)}
-      val cutDouble = udf{(a: Double, b: Double, in: Seq[Double]) => minMaxCutArray(a,b,in)}
+      val cutInt = udf{(a: Double, b: Double, in: Seq[Int]) => NU.minMaxCutArray(a,b,in)}
+      val cutLong = udf{(a: Double, b: Double, in: Seq[Long]) => NU.minMaxCutArray(a,b,in)}
+      val cutDouble = udf{(a: Double, b: Double, in: Seq[Double]) => NU.minMaxCutArray(a,b,in)}
 
-      val normInt = udf{(n: Int, in: Seq[Int]) => norm(in, n)}
-      val normLong = udf{(n: Int, in: Seq[Long]) => norm(in, n)}
-      val normDouble = udf{(n: Int, in: Seq[Double]) => norm(in, n)}
+      val normInt = udf{(n: Int, in: Seq[Int]) => NU.norm(in, n)}
+      val normLong = udf{(n: Int, in: Seq[Long]) => NU.norm(in, n)}
+      val normDouble = udf{(n: Int, in: Seq[Double]) => NU.norm(in, n)}
 
       scaler match {
         case Scaler.Ratio(r) => 
