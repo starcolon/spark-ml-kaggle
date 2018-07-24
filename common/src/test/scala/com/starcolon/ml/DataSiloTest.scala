@@ -174,15 +174,52 @@ class DataSiloTest extends SparkTestInstance with Matchers {
     }
 
     it("should find min/max of arrays"){
-
+      val fmin = Aggregation("a", Aggregator.Min, As("a"))
+      val fmax = Aggregation("a", Aggregator.Max, As("a"))
+      val dfOutMin = fmin.f(dfU4).as[U5]
+      val dfOutMax = fmax.f(dfU4).as[U5]
+      dfOutMin.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(1D)),
+        U5(None),
+        U5(Some(-1D))
+      ))
+      dfOutMax.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(3D)),
+        U5(None),
+        U5(Some(3D))
+      ))
     }
 
     it("should sum arrays"){
-
+      val agg = Aggregation("a", Aggregator.Sum, As("a"))
+      val dfOut = agg.f(dfU4).as[U5]
+      dfOut.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(6D)),
+        U5(None),
+        U5(Some(3D))
+      ))
     }
 
     it("should find std and variance of arrays"){
-
+      val fstd = Aggregation("a", Aggregator.Std, As("a"))
+      val fvar = Aggregation("a", Aggregator.Var, As("a"))
+      val dfOutStd = fstd.f(dfU4).as[U5]
+      val dfOutVar = fvar.f(dfU4).as[U5]
+      dfOutStd.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(0.81649658092772603)),
+        U5(None),
+        U5(Some(1.6329931618554521))
+      ))
+      dfOutVar.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(0.66666666666666663)),
+        U5(None),
+        U5(Some(2.6666666666666665))
+      ))
     }
 
     it("should find rms of arrays"){
