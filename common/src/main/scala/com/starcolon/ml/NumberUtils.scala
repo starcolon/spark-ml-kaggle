@@ -14,7 +14,7 @@ object NumberUtils {
   def norm[T: Numeric](arr: Seq[T], n: Int) = {
     require(n > 0)
     val d = arr.foldLeft(0D){(a,b) =>
-      a + math.pow(implicitly[Numeric[T]].toDouble(b), n.toDouble)
+      a + math.abs(math.pow(implicitly[Numeric[T]].toDouble(b), n.toDouble))
     }
     math.pow(d, 1/n.toDouble)
   }
