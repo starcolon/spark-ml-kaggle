@@ -28,6 +28,10 @@ object Scaler {
 
 trait Aggregator {
   def f[T: Numeric](arr: Seq[T]): Option[Double]
+
+  lazy val udfInt = udf{(arr: Seq[Int]) => f(arr)}
+  lazy val udfLong = udf{(arr: Seq[Long]) => f(arr)}
+  lazy val udfDouble = udf{(arr: Seq[Double]) => f(arr)}
 }
 
 object Aggregator {
@@ -142,17 +146,19 @@ object Silo {
           }
       }
     }
+  }
 
-    case class Aggregation(inputCol: String, aggregator: Aggregator, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-      override def f(input: Dataset[_]) = {
-        val output = getOutCol(inputCol, as)
-        val ArrayType(dataType,_) = input.schema(inputCol).dataType
-
-        ???
+  case class Aggregation(inputCol: String, aggregator: Aggregator, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
+    override def f(input: Dataset[_]) = {
+      val output = getOutCol(inputCol, as)
+      val ArrayType(dataType,_) = input.schema(inputCol).dataType
+      dataType match {
+        case IntegerType => input.withColumn(output, aggregator.udfInt(col(inputCol)))
+        case LongType => input.withColumn(output, aggregator.udfLong(col(inputCol)))
+        case DoubleType => input.withColumn(output, aggregator.udfDouble(col(inputCol)))
       }
     }
   }
-
 
 }
 

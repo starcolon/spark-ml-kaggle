@@ -21,6 +21,8 @@ object SampleTypes {
   case class U(a: String)
   case class U2(a: Seq[Int], b: Seq[Double], c: Seq[Double])
   case class U3(a: Seq[Double], b: Seq[Double])
+  case class U4(a: Seq[Double])
+  case class U5(a: Option[Double])
 }
 
 class DataSiloTest extends SparkTestInstance with Matchers {
@@ -41,9 +43,15 @@ class DataSiloTest extends SparkTestInstance with Matchers {
                 U3(Seq(-1,0,1),  Seq(10)) :: 
                 U3(Nil, Seq(5,-10,5)) :: Nil
 
+  lazy val u4 = U4(Seq(0,0,0)) ::
+                U4(Seq(1,2,3)) :: 
+                U4(Nil) :: 
+                U4(Seq(-1,3,1)) :: Nil
+
   lazy val dfU = uu.toDF
   lazy val dfU2 = u2.toDF
   lazy val dfU3 = u3.toDF
+  lazy val dfU4 = u4.toDF
 
   describe("Basic silo"){
 
@@ -147,6 +155,42 @@ class DataSiloTest extends SparkTestInstance with Matchers {
         Seq(4D, 4D),
         Seq(0D, 0D)
       ))
+    }
+
+  // U4(Seq(0,0,0) ::
+  // U4(Seq(1,2,3) :: 
+  // U4(Nil) :: 
+  // U4(Seq(-1,3,1)) :: Nil
+
+    it("should avg arrays"){
+      val agg = Aggregation("a", Aggregator.Avg, As("a"))
+      val dfOut = agg.f(dfU4).as[U5]
+      dfOut.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(2D)),
+        U5(None),
+        U5(Some(1D))
+      ))
+    }
+
+    it("should find min/max of arrays"){
+
+    }
+
+    it("should sum arrays"){
+
+    }
+
+    it("should find std and variance of arrays"){
+
+    }
+
+    it("should find rms of arrays"){
+
+    }
+
+    it("should find norm of arrays"){
+
     }
   }
 
