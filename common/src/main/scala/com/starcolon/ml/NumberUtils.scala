@@ -19,6 +19,12 @@ object NumberUtils {
     math.pow(d, 1/n.toDouble)
   }
 
+  def rms[T: Numeric](arr: Seq[T]) = {
+    math.sqrt(arr.foldLeft(0D){(a,b) =>
+      a + math.pow(implicitly[Numeric[T]].toDouble(b), 2D)
+    }/arr.size.toDouble)
+  }
+
   def mean[T: Numeric](arr: Seq[T]) = {
     require(!arr.isEmpty)
     implicitly[Numeric[T]].toDouble(arr.sum)/arr.size.toDouble

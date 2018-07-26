@@ -48,7 +48,13 @@ object Aggregator {
         Some(arr.foldLeft(0D){(d,a) => d + math.pow(implicitly[Numeric[T]].toDouble(a)-m,2)}/arr.size.toDouble)
     } 
   }
-  case object Rms extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = ??? }
+  case object Rms extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = 
+    arr match {
+      case Nil => None
+      case _ =>
+        Some(NU.rms(arr))
+    }
+  }
   case class Norm(n: Int) extends Aggregator { 
     require(n > 0) 
     override def f[T: Numeric](arr: Seq[T]) = 

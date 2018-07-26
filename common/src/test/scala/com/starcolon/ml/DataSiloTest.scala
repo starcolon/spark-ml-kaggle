@@ -223,7 +223,14 @@ class DataSiloTest extends SparkTestInstance with Matchers {
     }
 
     it("should find rms of arrays"){
-
+      val fnorm = Aggregation("a", Aggregator.Rms, As("a"))
+      val dfOut = fnorm.f(dfU4).as[U5]
+      dfOut.rdd.collect shouldBe(Seq(
+        U5(Some(0D)),
+        U5(Some(2.1602468994692869)),
+        U5(None),
+        U5(Some(1.9148542155126762))
+      ))
     }
 
     it("should find norm of arrays"){
