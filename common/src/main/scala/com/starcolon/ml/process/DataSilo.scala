@@ -8,6 +8,7 @@ import com.starcolon.ml.{NumberUtils => NU}
 
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
+import sys.process._
 
 trait DataSiloT extends Serializable {
   def f(input: Dataset[_]): Dataset[_]
@@ -92,11 +93,15 @@ object Silo {
     }
   }
 
-  case class ArrayEncode[T: ClassTag](inputCol: String, as: OutputCol = OutputCol.Inplace, valueFilePath: String = "/tmp/" + java.util.UUID.randomUUID.toString) extends DataSiloT {
+  case class ArrayEncode[T: ClassTag](inputCol: String, as: OutputCol = OutputCol.Inplace, valueFilePath: String = "/tmp/spark-ml-" + java.util.UUID.randomUUID.toString) extends DataSiloT {
     override def f(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
-      val distinctVals = input.select(explode(col(inputCol)).as(inputCol))
+      val distinctValDF = input.select(explode(col(inputCol)).as(inputCol))
         .dropDuplicates
+
+      WriteCSV(valueFilePath, withHeader = false) <~ distinctValDF
+
+      val distinctVals = distinctValDF
         .rdd
         .map(_.getAs[T](0))
 
