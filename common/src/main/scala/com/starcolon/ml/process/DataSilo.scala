@@ -6,6 +6,9 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
 import com.starcolon.ml.{NumberUtils => NU}
 
+import scala.reflect.runtime.universe._
+import scala.reflect.ClassTag
+
 trait DataSiloT extends Serializable {
   def f(input: Dataset[_]): Dataset[_]
 }
@@ -86,6 +89,18 @@ object Silo {
     override def f(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
       input.withColumn(out, explode(col(inputCol)))
+    }
+  }
+
+  case class ArrayEncode[T: ClassTag](inputCol: String, as: OutputCol = OutputCol.Inplace, valueFilePath: String = "/tmp/" + java.util.UUID.randomUUID.toString) extends DataSiloT {
+    override def f(input: Dataset[_]) = {
+      val out = getOutCol(inputCol, as)
+      val distinctVals = input.select(explode(col(inputCol)).as(inputCol))
+        .dropDuplicates
+        .rdd
+        .map(_.getAs[T](0))
+
+      ???
     }
   }
 

@@ -27,44 +27,9 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .convertToNone("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
     .where('country.isNotNull and 'employmentstatus.isNotNull)
+    .as[Bio]
+
   
-  // Try parsing the input data
-  PrintCollected(5) <~ dsInput.as[Bio]
-  PrintCollected(5) <~ dsInput.as[Job]
-  PrintCollected(5) <~ dsInput.as[Preference]
-
-  // Feature processors
-  val nullStringImputer = new NullImputer()
-    .setImputedValue("none")
-    .setInputCols(Array("professional", "formaleducation", "university"))
-
-  val stringSplitter = new StringSplitter()
-    .setInputCols(Array("learningnewtech","formaleducation"))
-
-  val stringArrayIndexer = new ArrayEncoder[String]()
-    .setInputCol("learningnewtech")
-    .setOutputCol("learningnewtech_array")
-
-  val featureVectorConcat = new VectorAssembler()
-    .setInputCols(Array("learningnewtech"))
-    .setOutputCol("feature")
-
-  // val featureReport = new FeatureVsTargetReport()
-  //   .setInputCols(Array("professional","formaleducation"))
-  //   .setOutputCol("learningnewtech")
-
-  val featurePreprocessor = new Pipeline().setStages(Array(
-    nullStringImputer,
-    stringArrayIndexer))
-
-
-  // Define classification models which run the same pipeline
-  val models = Seq(Classifier.DecisionTree, Classifier.RandomForest)
-    .map{clf => new Pipeline().setStages(Array(featurePreprocessor, clf))}
-
-  // Evaluate each model separately
-  //
-
 
   SparkSession.clearActiveSession()
   spark.stop()

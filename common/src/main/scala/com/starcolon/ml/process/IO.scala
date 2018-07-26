@@ -79,6 +79,17 @@ case class WriteMongo(database: String, collection: String) extends DataOutput {
   }
 }
 
+case class WriteCSV(file: String, withHeader: Boolean = false) extends DataOutput {
+  override def <~(data: Dataset[_]) = {
+    data.toDF
+      .write
+      .format("com.databricks.spark.csv")
+      .option("header", withHeader.toString)
+      .mode("overwrite")
+      .save(file)
+  }
+}
+
 
 /**
  * Unwrap the row objects before printing
