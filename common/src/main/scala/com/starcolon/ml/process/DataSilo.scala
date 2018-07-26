@@ -82,6 +82,13 @@ object Silo {
     }
   }
 
+  case class ArrayExplode(inputCol: String, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
+    override def f(input: Dataset[_]) = {
+      val out = getOutCol(inputCol, as)
+      input.withColumn(out, explode(col(inputCol)))
+    }
+  }
+
   case class ArrayConcat(cols: Seq[String], as: OutputCol.As) extends DataSiloT {
     override def f(input: Dataset[_]) = {
       val types = cols.map(c => input.schema(c).dataType).toSet
