@@ -27,9 +27,9 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .convertToNone("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
     .where('country.isNotNull and 'employmentstatus.isNotNull)
-    .as[Bio]
-
   
+  
+
 
   SparkSession.clearActiveSession()
   spark.stop()

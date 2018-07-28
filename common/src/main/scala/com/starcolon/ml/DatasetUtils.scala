@@ -23,6 +23,10 @@ object DatasetUtils {
   })
 
   def litArray(ns: Seq[_]) = lit(array(ns.map(lit):_*))
+
+  sealed trait JoinColumn
+  case class InnerJoin(c: String) extends JoinColumn
+  case class OuterJoin(c: String) extends JoinColumn
   
   implicit class DatasetOps(val df: Dataset[Row]) extends AnyVal {
     def lowercaseColumns: Dataset[Row] = 
@@ -72,6 +76,16 @@ object DatasetUtils {
           case LongType => d.withColumn(target, appendLongArray(col(c), col(target)))
           case DoubleType => d.withColumn(target, appendDoubleArray(col(c), col(target)))
           case StringType => d.withColumn(target, appendStringArray(col(c), col(target)))
+        }
+      }
+    }
+
+    def joinMultiple(column: JoinColumn, other: Dataset[_], others: Dataset[_]*): Dataset[Row] = {
+      val frames = other :: others.toList
+      frames.foldLeft(df){case(d,f) =>
+        column match {
+          case InnerJoin(c) => d.toDF.join(f, c :: Nil)
+          case OuterJoin(c) => d.toDF.join(f, c :: Nil, "outer")
         }
       }
     }
