@@ -10,11 +10,11 @@ import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 import sys.process._
 
-trait DataSiloT extends Serializable {
+sealed trait DataSiloT extends Serializable {
   def f(input: Dataset[_]): Dataset[_]
 }
 
-trait OutputCol 
+sealed trait OutputCol 
 
 object OutputCol {
   case class As(c: String) extends OutputCol
@@ -22,7 +22,7 @@ object OutputCol {
   def as(c: String) = As(c)
 }
 
-trait Scaler 
+sealed trait Scaler 
 
 object Scaler {
   case class Ratio(c: Double) extends Scaler
@@ -30,13 +30,15 @@ object Scaler {
   case class MinMaxCut(min: Option[Double], max: Option[Double]) extends Scaler
 }
 
-trait Aggregator {
+sealed trait Aggregator {
   def f[T: Numeric](arr: Seq[T]): Option[Double]
 
   lazy val udfInt = udf{(arr: Seq[Int]) => f(arr)}
   lazy val udfLong = udf{(arr: Seq[Long]) => f(arr)}
   lazy val udfDouble = udf{(arr: Seq[Double]) => f(arr)}
 }
+
+sealed trait StateMemory
 
 object Aggregator {
   case object Sum extends Aggregator { override def f[T: Numeric](arr: Seq[T]) = if (arr.isEmpty) None else Some(implicitly[Numeric[T]].toDouble(arr.sum)) }
@@ -93,13 +95,18 @@ object Silo {
     }
   }
 
-  case class ArrayEncode[T: ClassTag](inputCol: String, as: OutputCol = OutputCol.Inplace, valueFilePath: String = "/tmp/spark-ml-" + java.util.UUID.randomUUID.toString) extends DataSiloT {
+  case class ArrayEncode[T: ClassTag](
+    inputCol: String, 
+    as: OutputCol = OutputCol.Inplace, 
+    valueFilePath: String = "/tmp/spark-ml-" + java.util.UUID.randomUUID.toString) 
+  extends DataSiloT {
     override def f(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
       val distinctValDF = input.select(explode(col(inputCol)).as(inputCol))
         .dropDuplicates
 
-      WriteCSV(valueFilePath, withHeader = false) <~ distinctValDF
+      if (!valueFilePath.isEmpty)
+        WriteCSV(valueFilePath, withHeader = false) <~ distinctValDF
 
       val distinctVals = distinctValDF
         .rdd
