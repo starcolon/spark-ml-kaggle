@@ -28,18 +28,12 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
     .where('country.isNotNull and 'employmentstatus.isNotNull)
 
-  val dsBio = dsInput.as[Bio].toDF
-  val dsJob = dsInput.as[Job].toDF
-  val dsPrf = dsInput.as[Preference].toDF
+
+  println(CYAN)
+  dsInput.printSchema
+  println(RESET)
+
   
-  // Overkill, but a fancy way (*_*)
-  val ds = dsBio joinMultiple(
-    InnerJoin("respondent"),
-    dsJob,
-    dsPrf)
-
-
-  new PrintWithSchema(10) <~ ds
 
   // Bis später!
   SparkSession.clearActiveSession()
