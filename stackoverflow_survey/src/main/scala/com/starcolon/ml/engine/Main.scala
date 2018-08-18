@@ -17,6 +17,7 @@ import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
 import com.starcolon.ml.transformers._
 import com.starcolon.ml.model.{Classifier, ModelColumns}
+// import com.starcolon.ml.process.Silo._
 
 object SparkMain extends App with SparkBase with ModelColumns {
   import spark.implicits._
@@ -30,9 +31,17 @@ object SparkMain extends App with SparkBase with ModelColumns {
 
 
   println(CYAN)
-  dsInput.printSchema
+  dsInput.select(
+    "professional", "country", "formaleducation", "race", "majorundergrad",
+    "employmentstatus", "companysize", "yearscodedjob", "careersatisfaction", "salary", "expectedsalary")
+    .printLines(5)
   println(RESET)
 
+  // Data processing recipes
+  val recipes = Array()
+
+
+  // Cook the data
   
 
   // Bis später!

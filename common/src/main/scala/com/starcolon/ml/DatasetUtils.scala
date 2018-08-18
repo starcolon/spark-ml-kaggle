@@ -93,6 +93,16 @@ object DatasetUtils {
     def distinctValues[T: Manifest](column: String): Seq[T] = {
       df.select(column).distinct.rdd.map{_.getAs[T](0)}.collect
     }
+
+    def printLines(limit: Int = 5): Unit = {
+      val cols = df.columns
+      df.take(5).foreach{ r =>
+        println("----------------------------")
+        cols.zip(r.toSeq).foreach{ case(c,v) => 
+          println(c.padTo(cols.maxBy(_.length).length + 3, " ").mkString + ": " + v)
+        }
+      }
+    }
   }
 
 }
