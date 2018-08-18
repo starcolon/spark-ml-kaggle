@@ -17,7 +17,8 @@ import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
 import com.starcolon.ml.transformers._
 import com.starcolon.ml.model.{Classifier, ModelColumns}
-// import com.starcolon.ml.process.Silo._
+import com.starcolon.ml.process.Silo.OneHotEncode
+import com.starcolon.ml.process.OutputCol._
 
 object SparkMain extends App with SparkBase with ModelColumns {
   import spark.implicits._
@@ -31,15 +32,15 @@ object SparkMain extends App with SparkBase with ModelColumns {
 
 
   println(CYAN)
-  dsInput.select(
+  val stringValueCols = Seq(
     "professional", "country", "formaleducation", "race", "majorundergrad",
-    "employmentstatus", "companysize", "yearscodedjob", "careersatisfaction", "salary", "expectedsalary")
-    .printLines(5)
+    "employmentstatus", "companysize", "yearscodedjob", "careersatisfaction", "salary", "expectedsalary"
+  )
+  dsInput.select(stringValueCols.head, stringValueCols.tail:_*).printLines(5)
   println(RESET)
 
   // Data processing recipes
-  val recipes = Array()
-
+  val recipes = stringValueCols.map{c => OneHotEncode(c, Inplace)}
 
   // Cook the data
   
