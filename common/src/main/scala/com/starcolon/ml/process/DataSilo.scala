@@ -22,6 +22,11 @@ object OutputCol {
   def as(c: String) = As(c)
 }
 
+sealed trait DataFile
+
+case class SaveToDataFile(s: String) extends DataFile
+case class LoadFromDataFile(s: String) extends DataFile
+
 sealed trait Scaler 
 
 object Scaler {
@@ -130,17 +135,23 @@ object Silo {
   case class OneHotEncode[T: ClassTag](
     inputCol: String,
     as: OutputCol = OutputCol.Inplace,
-    valueFilePath: String = "tmp/spark-ml-ohe-" + java.util.UUID.randomUUID.toString)
+    dataFile: DataFile = SaveToDataFile("tmp/spark-ml-ohe-" + java.util.UUID.randomUUID.toString))
   extends DataSiloT {
-    // TAOTODO: Make value file either [ReadFrom] or [WriteTo]
+
     override def $(input: Dataset[_]) = {
+
+      val spark = input.sparkSession
       val out = getOutCol(inputCol, as)
-      val distinctValDF = input.select(col(inputCol).cast(StringType)).dropDuplicates.coalesce(1)
+
+      val distinctValDF = dataFile match {
+        case LoadFromDataFile(s) => spark.read.option("header", "false").csv(s)
+        case SaveToDataFile(s) => 
+          val dfV = input.select(col(inputCol).cast(StringType)).dropDuplicates.coalesce(1)
+          WriteCSV(s, withHeader = false) <~ dfV
+          dfV
+      }
+
       val valueMapp = distinctValDF.rdd.map(_.getAs[String](0)).collect
-
-      if (!valueFilePath.isEmpty)
-        WriteCSV(valueFilePath, withHeader = false) <~ distinctValDF
-
       val mapToIndex = udf{v: String => valueMapp.indexOf(v)}
       input.withColumn(out, mapToIndex(col(inputCol).cast(StringType)))
     }
