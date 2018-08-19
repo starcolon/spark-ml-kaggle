@@ -17,7 +17,7 @@ import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
 import com.starcolon.ml.transformers._
 import com.starcolon.ml.model.{Classifier, ModelColumns}
-import com.starcolon.ml.process.Silo.OneHotEncode
+import com.starcolon.ml.process.Silo.{OneHotEncode, ReplaceNumericalValue}
 import com.starcolon.ml.process.OutputCol._
 
 object SparkMain extends App with SparkBase with ModelColumns {
@@ -30,7 +30,6 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
     .where('country.isNotNull and 'employmentstatus.isNotNull)
 
-
   println(CYAN)
   val stringValueCols = Seq(
     "professional", "country", "formaleducation", "race", "majorundergrad",
@@ -40,10 +39,12 @@ object SparkMain extends App with SparkBase with ModelColumns {
   println(RESET)
 
   // Data processing recipes
-  val recipes = stringValueCols.map{c => OneHotEncode(c, Inplace)}
+  val recipes: Seq[DataSiloT] = 
+    ReplaceNumericalValue("salary", Inplace, "Agree") +:
+    stringValueCols.map{c => OneHotEncode(c, Inplace)}
 
   // Cook the data
-  val dsPrepared = recipes.foldLeft(dsInput){ case(ds,r) => r $ ds }
+  val dsPrepared: Dataset[_] = recipes.foldLeft(dsInput){ case(ds,r) => r $ ds }
 
   println(GREEN)
   dsPrepared.select(stringValueCols.head, stringValueCols.tail:_*).printLines(5)

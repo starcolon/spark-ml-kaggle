@@ -9,6 +9,7 @@ import com.starcolon.ml.{NumberUtils => NU}
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
 import sys.process._
+import scala.util.{Try, Success, Failure}
 
 sealed trait DataSiloT extends Serializable {
   def $(input: Dataset[_]): Dataset[_]
@@ -154,6 +155,21 @@ object Silo {
       val valueMapp = distinctValDF.rdd.map(_.getAs[String](0)).collect
       val mapToIndex = udf{v: String => valueMapp.indexOf(v)}
       input.withColumn(out, mapToIndex(col(inputCol).cast(StringType)))
+    }
+  }
+
+  case class ReplaceNumericalValue(inputCol: String, as: OutputCol, value: String) 
+  extends DataSiloT {
+    override def $(input: Dataset[_]) = {
+      require(input.schema(inputCol).dataType == StringType)
+      val out = getOutCol(inputCol, as)
+      val replaceValue = udf{s: String =>
+        Try { Some(s.toDouble) } match {
+          case Success(e) => value
+          case Failure(e) => s
+        }
+      }
+      input.withColumn(out, replaceValue(col(inputCol), lit(value)))
     }
   }
 
