@@ -98,7 +98,7 @@ object Silo {
   extends DataSiloT {
     override def $(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
-      val distinctValDF = input.select(explode(col(inputCol)).as(inputCol))
+      val distinctValDF = input.select(explode(col(inputCol)).cast(StringType).as(inputCol))
         .dropDuplicates
         .coalesce(1)
 
@@ -107,9 +107,23 @@ object Silo {
 
       val distinctVals = distinctValDF
         .rdd
-        .map(_.getAs[T](0))
+        .map(_.getAs[String](0))
+        .collect
 
-      ???
+      val castArrayInt = udf{ arr: Seq[Int] => arr.map(_.toString)}
+      val castArrayLong = udf{ arr: Seq[Long] => arr.map(_.toString)}
+      val castArrayBool = udf{ arr: Seq[Boolean] => arr.map(_.toString)}
+      val castArrayDouble = udf{ arr: Seq[Double] => arr.map(_.toString)}
+
+      val mapToIndex = udf{vs: Seq[String] => vs.map(distinctVals.indexOf(_))}
+      val inputCasted = input.schema(inputCol).dataType match {
+        case ArrayType(IntegerType,_) => input.withColumn(inputCol, castArrayInt(col(inputCol)))
+        case ArrayType(LongType,_) => input.withColumn(inputCol, castArrayLong(col(inputCol)))
+        case ArrayType(BooleanType,_) => input.withColumn(inputCol, castArrayBool(col(inputCol)))
+        case ArrayType(DoubleType,_) => input.withColumn(inputCol, castArrayDouble(col(inputCol)))
+        case ArrayType(StringType,_) => input
+      }
+      inputCasted.withColumn(out, mapToIndex(col(inputCol)))
     }
   }
 
@@ -123,9 +137,6 @@ object Silo {
       val out = getOutCol(inputCol, as)
       val distinctValDF = input.select(col(inputCol).cast(StringType)).dropDuplicates.coalesce(1)
       val valueMapp = distinctValDF.rdd.map(_.getAs[String](0)).collect
-
-      // TAODEBUG:
-      println(s"$inputCol :=> ${valueMapp.mkString(", ")}")
 
       if (!valueFilePath.isEmpty)
         WriteCSV(valueFilePath, withHeader = false) <~ distinctValDF
