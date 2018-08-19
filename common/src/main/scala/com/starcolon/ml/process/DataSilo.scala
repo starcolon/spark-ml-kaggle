@@ -155,7 +155,7 @@ object Silo {
       val distinctValDF = dataFile match {
         case LoadFromDataFile(s) => spark.read.option("header", "false").csv(s)
         case SaveToDataFile(s) => 
-          val dfV = input.select(col(inputCol).cast(StringType)).dropDuplicates.sortBy(inputCol).coalesce(1)
+          val dfV = input.select(col(inputCol).cast(StringType)).dropDuplicates.orderBy(inputCol).coalesce(1)
           WriteCSV(s, withHeader = false) <~ dfV
           dfV
       }
