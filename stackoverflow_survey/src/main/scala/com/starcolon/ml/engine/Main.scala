@@ -41,7 +41,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
 
   // Data processing recipes
   val recipes: Seq[DataSiloT] = 
-    ReplaceNumericalValue("salary", Inplace, "Agree") +:
+    ReplaceNumericalValue("salary", Inplace, "Somewhat agree") +:
     stringValueCols.map{c => OneHotEncode(c, Inplace)}
 
   // Cook the data

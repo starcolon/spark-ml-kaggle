@@ -266,7 +266,6 @@ class DataSiloTest extends SparkTestInstance with Matchers {
       val cut    = ArrayScaler("a", Scaler.MinMaxCut(Some(0), None), Inplace)
       val concat = ArrayConcat(Seq("b","a"), As("w"))
       
-      // val dfOut  = dfU3 $ scale $ cut $ concat
       val dfOut = Seq(scale, cut, concat) $ dfU3
       dfOut.schema("w").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("w").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
