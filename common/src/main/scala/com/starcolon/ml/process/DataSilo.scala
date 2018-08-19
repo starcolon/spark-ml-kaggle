@@ -11,7 +11,7 @@ import scala.reflect.ClassTag
 import sys.process._
 
 sealed trait DataSiloT extends Serializable {
-  def f(input: Dataset[_]): Dataset[_]
+  def $(input: Dataset[_]): Dataset[_]
 }
 
 sealed trait OutputCol 
@@ -75,12 +75,8 @@ object Silo {
     case OutputCol.As(c) => c
   }
 
-  implicit class DatasetOps(val df: Dataset[_]){
-    def $(silo: DataSiloT) = silo.f(df)
-  }
-
   case class SplitString(inputCol: String, delimiter: String = ",", as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       require(input.schema(inputCol).dataType == StringType)
       val out = getOutCol(inputCol, as)
       val split = udf{ s: String => s.split(delimiter) }
@@ -89,7 +85,7 @@ object Silo {
   }
 
   case class ArrayExplode(inputCol: String, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
       input.withColumn(out, explode(col(inputCol)))
     }
@@ -100,7 +96,7 @@ object Silo {
     as: OutputCol = OutputCol.Inplace, 
     valueFilePath: String = "tmp/spark-ml-ae-" + java.util.UUID.randomUUID.toString) 
   extends DataSiloT {
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
       val distinctValDF = input.select(explode(col(inputCol)).as(inputCol))
         .dropDuplicates
@@ -123,7 +119,7 @@ object Silo {
     valueFilePath: String = "tmp/spark-ml-ohe-" + java.util.UUID.randomUUID.toString)
   extends DataSiloT {
     // TAOTODO: Make value file either [ReadFrom] or [WriteTo]
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
       val distinctValDF = input.select(col(inputCol).cast(StringType)).dropDuplicates.coalesce(1)
       val valueMapp = distinctValDF.collect.zipWithIndex
@@ -141,7 +137,7 @@ object Silo {
   }
 
   case class ArrayConcat(cols: Seq[String], as: OutputCol.As) extends DataSiloT {
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       val types = cols.map(c => input.schema(c).dataType).toSet
       require(types.size == 1)
       val OutputCol.As(out) = as
@@ -160,7 +156,7 @@ object Silo {
   }
 
   case class ArrayScaler(inputCol: String, scaler: Scaler, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       val output = getOutCol(inputCol, as)
       val ArrayType(dataType,_) = input.schema(inputCol).dataType
       
@@ -213,7 +209,7 @@ object Silo {
   }
 
   case class Aggregation(inputCol: String, aggregator: Aggregator, as: OutputCol = OutputCol.Inplace) extends DataSiloT {
-    override def f(input: Dataset[_]) = {
+    override def $(input: Dataset[_]) = {
       val output = getOutCol(inputCol, as)
       val ArrayType(dataType,_) = input.schema(inputCol).dataType
       dataType match {

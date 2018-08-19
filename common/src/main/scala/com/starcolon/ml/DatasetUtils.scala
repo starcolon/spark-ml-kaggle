@@ -28,7 +28,10 @@ object DatasetUtils {
   case class InnerJoin(c: String) extends JoinColumn
   case class OuterJoin(c: String) extends JoinColumn
   
-  implicit class DatasetOps(val df: Dataset[Row]) extends AnyVal {
+  implicit class DatasetOps(val ds: Dataset[_]) extends AnyVal {
+
+    private def df = ds.toDF
+
     def lowercaseColumns: Dataset[Row] = 
       df.columns.foldLeft(df){ case(d,c) => d.withColumnRenamed(c, c.toLowerCase)}
 
