@@ -15,6 +15,14 @@ sealed trait DataSiloT extends Serializable {
   def $(input: Dataset[_]): Dataset[_]
 }
 
+object Ops {
+  implicit class SiloSeqOps(val seq: Seq[DataSiloT]) extends AnyVal {
+    def $(input: Dataset[_]): Dataset[Row] = {
+      seq.foldLeft(input.toDF){ case(d,s) => (s $ d).toDF}
+    }
+  }
+}
+
 sealed trait OutputCol 
 
 object OutputCol {
