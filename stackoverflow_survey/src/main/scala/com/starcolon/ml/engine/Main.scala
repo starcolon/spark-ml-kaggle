@@ -45,11 +45,10 @@ object SparkMain extends App with SparkBase with ModelColumns {
     stringValueCols.map{c => OneHotEncode(c, Inplace)}
 
   // Cook the data
-  // val dsPrepared: Dataset[_] = recipes.foldLeft(dsInput){ case(ds,r) => r $ ds }
   val dsPrepared = recipes $ dsInput
 
   println(GREEN)
-  dsPrepared.select(stringValueCols.head, stringValueCols.tail:_*).printLines(5)
+  dsPrepared.select("respondent", stringValueCols:_*).printLines(5)
   println(RESET)
 
   // Bis später!

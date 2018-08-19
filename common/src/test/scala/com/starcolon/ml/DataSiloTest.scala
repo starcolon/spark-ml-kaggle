@@ -57,7 +57,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should split string"){
       val split = SplitString("a", ",", Inplace)
-      val dfOut = split.f(dfU)
+      val dfOut = split.$(dfU)
       dfOut.columns shouldBe(Seq("a"))
       dfOut.schema("a").dataType shouldBe(ArrayType(StringType, true))
       dfOut.select("a").rdd.map(_.getAs[Seq[String]](0)).collect shouldBe(Seq(
@@ -68,10 +68,21 @@ class DataSiloTest extends SparkTestInstance with Matchers {
       ))
     }
 
+    it("should replace numerical values"){
+      val df = Seq(
+        ("135"),("233"),("Foo"),("1e3"),("Bar")
+      ).toDF("a")
+
+      val dfOut = ReplaceNumericalValue("a", Inplace, "Number").$(df)
+      dfOut.select("a").rdd.map(_.getAs[String](0)).collect shouldBe(Seq(
+        "Number", "Number", "Foo", "Number", "Bar"
+      ))
+    }
+
     it("should concatnate arrays - Int arrays"){
       val concat = ArrayConcat("w" :: "a" :: Nil, As("w"))
       val df = dfU2.withColumn("w", litArray(Seq(1,2,3)))
-      val dfOut = concat.f(df)
+      val dfOut = concat.$(df)
       dfOut.columns shouldBe(Seq("a","b","c","w"))
       dfOut.schema("w").dataType shouldBe(ArrayType(IntegerType, false))
       dfOut.select("w").rdd.map(_.getAs[Seq[Int]](0)).collect shouldBe(Seq(
@@ -82,7 +93,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should concatnate arrays - Double arrays"){
       val concat = ArrayConcat("b" :: "c" :: Nil, As("w"))
-      val dfOut = concat.f(dfU2)
+      val dfOut = concat.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c","w"))
       dfOut.schema("w").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("w").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -93,7 +104,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should scale arrays - Int Array"){
       val scale = ArrayScaler("a", Scaler.Ratio(50), Inplace)
-      val dfOut = scale.f(dfU2)
+      val dfOut = scale.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c"))
       dfOut.schema("a").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("a").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -104,7 +115,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should scale arrays - Double Array"){
       val scale = ArrayScaler("c", Scaler.Ratio(-5), Inplace)
-      val dfOut = scale.f(dfU2)
+      val dfOut = scale.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c"))
       dfOut.schema("c").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("c").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -115,7 +126,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should scale arrays - Norm"){
       val scale = ArrayScaler("b", Scaler.DivisionByNorm(2), Inplace)
-      val dfOut = scale.f(dfU2)
+      val dfOut = scale.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c"))
       dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -126,7 +137,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should min max cut arrays, open min"){
       val cut = ArrayScaler("b", Scaler.MinMaxCut(None, Some(4.5)), Inplace)
-      val dfOut = cut.f(dfU2)
+      val dfOut = cut.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c"))
       dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -137,7 +148,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should min max cut arrays, open max"){
       val cut = ArrayScaler("b", Scaler.MinMaxCut(Some(-0.5D), None), Inplace)
-      val dfOut = cut.f(dfU2)
+      val dfOut = cut.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c"))
       dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -148,7 +159,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should min max cut arrays"){
       val cut = ArrayScaler("b", Scaler.MinMaxCut(Some(0), Some(4D)), Inplace)
-      val dfOut = cut.f(dfU2)
+      val dfOut = cut.$(dfU2)
       dfOut.columns shouldBe(Seq("a","b","c"))
       dfOut.schema("b").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("b").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
@@ -164,7 +175,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should avg arrays"){
       val agg = Aggregation("a", Aggregator.Avg, As("a"))
-      val dfOut = agg.f(dfU4).as[U5]
+      val dfOut = agg.$(dfU4).as[U5]
       dfOut.rdd.collect shouldBe(Seq(
         U5(Some(0D)),
         U5(Some(2D)),
@@ -176,8 +187,8 @@ class DataSiloTest extends SparkTestInstance with Matchers {
     it("should find min/max of arrays"){
       val fmin = Aggregation("a", Aggregator.Min, As("a"))
       val fmax = Aggregation("a", Aggregator.Max, As("a"))
-      val dfOutMin = fmin.f(dfU4).as[U5]
-      val dfOutMax = fmax.f(dfU4).as[U5]
+      val dfOutMin = fmin.$(dfU4).as[U5]
+      val dfOutMax = fmax.$(dfU4).as[U5]
       dfOutMin.rdd.collect shouldBe(Seq(
         U5(Some(0D)),
         U5(Some(1D)),
@@ -194,7 +205,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should sum arrays"){
       val agg = Aggregation("a", Aggregator.Sum, As("a"))
-      val dfOut = agg.f(dfU4).as[U5]
+      val dfOut = agg.$(dfU4).as[U5]
       dfOut.rdd.collect shouldBe(Seq(
         U5(Some(0D)),
         U5(Some(6D)),
@@ -206,8 +217,8 @@ class DataSiloTest extends SparkTestInstance with Matchers {
     it("should find std and variance of arrays"){
       val fstd = Aggregation("a", Aggregator.Std, As("a"))
       val fvar = Aggregation("a", Aggregator.Var, As("a"))
-      val dfOutStd = fstd.f(dfU4).as[U5]
-      val dfOutVar = fvar.f(dfU4).as[U5]
+      val dfOutStd = fstd.$(dfU4).as[U5]
+      val dfOutVar = fvar.$(dfU4).as[U5]
       dfOutStd.rdd.collect shouldBe(Seq(
         U5(Some(0D)),
         U5(Some(0.81649658092772603)),
@@ -224,7 +235,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should find rms of arrays"){
       val fnorm = Aggregation("a", Aggregator.Rms, As("a"))
-      val dfOut = fnorm.f(dfU4).as[U5]
+      val dfOut = fnorm.$(dfU4).as[U5]
       dfOut.rdd.collect shouldBe(Seq(
         U5(Some(0D)),
         U5(Some(2.1602468994692869)),
@@ -235,7 +246,7 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
     it("should find norm of arrays"){
       val fnorm = Aggregation("a", Aggregator.Norm(3), As("a"))
-      val dfOut = fnorm.f(dfU4).as[U5]
+      val dfOut = fnorm.$(dfU4).as[U5]
       dfOut.rdd.collect shouldBe(Seq(
         U5(Some(0D)),
         U5(Some(3.3019272488946263)),
@@ -247,12 +258,16 @@ class DataSiloTest extends SparkTestInstance with Matchers {
 
   describe("Chained operations"){
 
+    import com.starcolon.ml.process.Ops._
+
     it("should chain the operations"){
+
       val scale  = ArrayScaler("b", Scaler.Ratio(0.2), Inplace)
       val cut    = ArrayScaler("a", Scaler.MinMaxCut(Some(0), None), Inplace)
       val concat = ArrayConcat(Seq("b","a"), As("w"))
       
-      val dfOut  = dfU3 $ scale $ cut $ concat
+      // val dfOut  = dfU3 $ scale $ cut $ concat
+      val dfOut = Seq(scale, cut, concat) $ dfU3
       dfOut.schema("w").dataType shouldBe(ArrayType(DoubleType, false))
       dfOut.select("w").rdd.map(_.getAs[Seq[Double]](0)).collect shouldBe(Seq(
         Seq(5,0,0,0),

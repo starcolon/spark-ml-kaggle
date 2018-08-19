@@ -166,18 +166,21 @@ object Silo {
     }
   }
 
+  /**
+   * Replace the string value which is parsable to double with the specified value
+   */
   case class ReplaceNumericalValue(inputCol: String, as: OutputCol, value: String) 
   extends DataSiloT {
     override def $(input: Dataset[_]) = {
       require(input.schema(inputCol).dataType == StringType)
       val out = getOutCol(inputCol, as)
       val replaceValue = udf{s: String =>
-        Try { Some(s.toDouble) } match {
-          case Success(e) => value
-          case Failure(e) => s
+        Try { s.toDouble } match {
+          case Success(_) => value
+          case Failure(_) => s
         }
       }
-      input.withColumn(out, replaceValue(col(inputCol), lit(value)))
+      input.withColumn(out, replaceValue(col(inputCol)))
     }
   }
 
