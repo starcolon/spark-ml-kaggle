@@ -94,7 +94,7 @@ object Silo {
   case class ArrayEncode[T: ClassTag](
     inputCol: String, 
     as: OutputCol = OutputCol.Inplace, 
-    valueFilePath: String = "tmp/spark-ml-ae-" + java.util.UUID.randomUUID.toString) 
+    valueFilePath: String = "tmp/spark-ml-ae-" + inputCol + "-" + java.util.UUID.randomUUID.toString) 
   extends DataSiloT {
     override def $(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
@@ -116,22 +116,18 @@ object Silo {
   case class OneHotEncode[T: ClassTag](
     inputCol: String,
     as: OutputCol = OutputCol.Inplace,
-    valueFilePath: String = "tmp/spark-ml-ohe-" + java.util.UUID.randomUUID.toString)
+    valueFilePath: String = "tmp/spark-ml-ohe-" + inputCol + "-" + java.util.UUID.randomUUID.toString)
   extends DataSiloT {
     // TAOTODO: Make value file either [ReadFrom] or [WriteTo]
     override def $(input: Dataset[_]) = {
       val out = getOutCol(inputCol, as)
       val distinctValDF = input.select(col(inputCol).cast(StringType)).dropDuplicates.coalesce(1)
-      val valueMapp = distinctValDF.collect.zipWithIndex
+      val valueMapp = distinctValDF.collect
 
       if (!valueFilePath.isEmpty)
         WriteCSV(valueFilePath, withHeader = false) <~ distinctValDF
 
-      val mapToIndex = udf{v: String => valueMapp
-        .find{case(w,i) => w==v}
-        .map{case(w,i) => i}
-        .getOrElse(-1)
-      }
+      val mapToIndex = udf{v: String => valueMapp.indexOf(v)}
       input.withColumn(out, mapToIndex(col(inputCol).cast(StringType)))
     }
   }
