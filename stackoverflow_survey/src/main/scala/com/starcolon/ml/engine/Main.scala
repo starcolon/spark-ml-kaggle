@@ -30,6 +30,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .convertToNone("NA")
     .castMany("respondent" :: "yearscodedjob" :: Nil, IntegerType)
     .where('country.isNotNull and 'employmentstatus.isNotNull)
+    .na.fill("Somewhat agree", "salary" :: Nil)
 
   println(CYAN)
   val stringValueCols = Seq(
