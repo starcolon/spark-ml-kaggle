@@ -167,6 +167,46 @@ object Silo {
   }
 
   /**
+   * Convert integer values to percentile
+   */
+  case class PercentileInt(
+    inputCol: String,
+    as: OutputCol = OutputCol.Inplace,
+    dataFile: DataFile = SaveToDataFile("tmp/spark-ml-sii-" + java.util.UUID.randomUUID.toString),
+    digit: Int = 3)
+  extends DataSiloT {
+
+    override def $(input: Dataset[_]) = {
+      val out = getOutCol(inputCol, as)
+      val N = math.pow(10, digit).toInt 
+      val round = udf{s: String => Try{ s.toDouble.round * N}.getOrElse(0L)}
+
+      val mapPR = dataFile match {
+        case LoadFromDataFile(s) => 
+          ??? // TAOTODO: Load map file
+        case SaveToDataFile(s) => 
+          val df = input.withColumn(out, round(col(inputCol)))
+          val pop = df.select(out).groupBy(out).count.rdd.map{ p =>
+            (p.getAs[Long](0), p.getAs[Long](1))
+          }.collectAsMap
+
+          val sum = pop.values.sum.toDouble
+
+          val map = pop.map{ case(k,v) => 
+            (k, pop.filter{ case(a,_) => k > a}.values.sum / sum) 
+          }.toMap
+
+          // TAOTODO: Save map to file
+
+          map
+      }
+      
+      val toPR = udf{ d: Long => mapPR.getOrElse(d, 0D) }
+      input.withColumn(out, toPR(round(col(inputCol))))
+    }
+  }
+
+  /**
    * Replace the string value which is parsable to double with the specified value
    */
   case class ReplaceNumericalValue(inputCol: String, as: OutputCol, value: String) 
