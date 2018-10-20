@@ -17,7 +17,7 @@ import com.starcolon.ml.domain.StackOverflowTypes._
 import com.starcolon.ml.DatasetUtils._
 import com.starcolon.ml.transformers._
 import com.starcolon.ml.model.{Classifier, ModelColumns}
-import com.starcolon.ml.process.Silo.{OneHotEncode, ReplaceNumericalValue}
+import com.starcolon.ml.process.Silo._
 import com.starcolon.ml.process.OutputCol._
 import com.starcolon.ml.process.Ops._
 
@@ -43,13 +43,18 @@ object SparkMain extends App with SparkBase with ModelColumns {
   // Data processing recipes
   val recipes: Seq[DataSiloT] = 
     ReplaceNumericalValue("salary", Inplace, "Somewhat agree") +:
-    stringValueCols.map{c => OneHotEncode(c, Inplace)}
+    stringValueCols.map{c => OneHotEncode(c, Inplace)} :+
+    ComposeFeatureArray(stringValueCols, As("feature"))
 
   // Cook the data
   val dsPrepared = recipes $ dsInput
 
   println(GREEN)
   dsPrepared.select("respondent", stringValueCols:_*).printLines(5)
+  println(RESET)
+
+  println(MAGENTA)
+  dsPrepared.select("respondent", "feature").printLines(5)
   println(RESET)
 
   // Bis später!

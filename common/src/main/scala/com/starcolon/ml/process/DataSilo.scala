@@ -5,6 +5,7 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
 import com.starcolon.ml.{NumberUtils => NU}
+import com.starcolon.ml.DatasetUtils.litArray
 
 import scala.reflect.runtime.universe._
 import scala.reflect.ClassTag
@@ -305,6 +306,34 @@ object Silo {
         case LongType => input.withColumn(output, aggregator.udfLong(col(inputCol)))
         case DoubleType => input.withColumn(output, aggregator.udfDouble(col(inputCol)))
       }
+    }
+  }
+
+  /**
+   * Output type is an array of double.
+   * Supported input types: Primitive numeric, or array of numeric
+   */
+  case class ComposeFeatureArray(inputCols: Seq[String], as: OutputCol.As) extends DataSiloT {
+    override def $(input: Dataset[_]) = {
+      val OutputCol.As(output) = as
+      val emptyDoubleArray: Seq[Double] = Nil
+      val dfOut = input.withColumn(output, litArray(emptyDoubleArray))
+
+      lazy val pushIntToArray = udf{(i: Int, arr: Seq[Double]) => arr :+ i.toDouble}
+      lazy val pushLongToArray = udf{(i: Long, arr: Seq[Double]) => arr :+ i.toDouble}
+      lazy val pushDoubleToArray = udf{(i: Double, arr: Seq[Double]) => arr :+ i}
+
+      inputCols.foldLeft(dfOut){ case(d,c) =>
+        input.schema(c).dataType match {
+          case IntegerType => d.withColumn(output, pushIntToArray(col(c), col(output)))
+          case LongType => d.withColumn(output, pushLongToArray(col(c), col(output)))
+          case DoubleType => d.withColumn(output, pushDoubleToArray(col(c), col(output)))
+          case ArrayType(IntegerType,_) => ???
+          case ArrayType(LongType,_) => ???
+          case ArrayType(DoubleType,_) => ???
+        }
+      }
+      ??? // TAOTODO:
     }
   }
 
