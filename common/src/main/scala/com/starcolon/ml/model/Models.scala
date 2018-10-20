@@ -12,11 +12,12 @@ trait ModelColumns {
 }
 
 object Classifier extends ModelColumns {
-  val XGBoost: Pipeline = ???
-  val DecisionTree: Pipeline = new Pipeline().setStages(Array(decisionTree))
-  val RandomForest: Pipeline = new Pipeline().setStages(Array(randomForest))
-  val NaiveBayes: Pipeline = ???
-  val SVM: Pipeline = ???
+  lazy val XGBoost: Pipeline = ???
+  lazy val DecisionTree: Pipeline = new Pipeline().setStages(Array(decisionTree))
+  lazy val RandomForest: Pipeline = new Pipeline().setStages(Array(randomForest))
+  lazy val NaiveBayes: Pipeline = ???
+  lazy val SVM: Pipeline = ???
+  lazy val DNN: Pipeline = ???
 
   private val decisionTree = new DecisionTreeClassifier()
     .setFeaturesCol(featuresCol)
@@ -37,4 +38,5 @@ object Classifier extends ModelColumns {
     .setProbabilityCol(predictionCol + "_prob")
 
   def all = Seq(XGBoost, DecisionTree, RandomForest, NaiveBayes)
+  def allTreeBase = Seq(XGBoost, DecisionTree, RandomForest)
 }
