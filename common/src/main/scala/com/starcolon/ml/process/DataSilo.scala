@@ -317,23 +317,40 @@ object Silo {
     override def $(input: Dataset[_]) = {
       val OutputCol.As(output) = as
       val emptyDoubleArray: Seq[Double] = Nil
-      val dfOut = input.withColumn(output, litArray(emptyDoubleArray))
 
-      lazy val pushIntToArray = udf{(i: Int, arr: Seq[Double]) => arr :+ i.toDouble}
-      lazy val pushLongToArray = udf{(i: Long, arr: Seq[Double]) => arr :+ i.toDouble}
-      lazy val pushDoubleToArray = udf{(i: Double, arr: Seq[Double]) => arr :+ i}
+      val intToArray = udf{(i: Int) => Seq(i.toDouble)}
+      val longToArray = udf{(i: Long) => Seq(i.toDouble)}
+      val doubleToArray = udf{(i: Double) => Seq(i)}
+      val intArrayToDoubleArray = udf{(arr: Seq[Int]) => arr.map(_.toDouble)}
+      val longArrayToDoubleArray = udf{(arr: Seq[Long]) => arr.map(_.toDouble)}
 
-      inputCols.foldLeft(dfOut){ case(d,c) =>
+      val dfOut = input.schema(inputCols.head).dataType match {
+        case IntegerType => input.withColumn(output, intToArray(col(inputCols.head)))
+        case LongType => input.withColumn(output, longToArray(col(inputCols.head)))
+        case DoubleType => input.withColumn(output, doubleToArray(col(inputCols.head)))
+        case ArrayType(IntegerType,_) => input.withColumn(output, intArrayToDoubleArray(col(inputCols.head)))
+        case ArrayType(LongType,_) => input.withColumn(output, longArrayToDoubleArray(col(inputCols.head)))
+        case ArrayType(DoubleType,_) => input.withColumn(output, col(inputCols.head))
+      }
+
+      val pushIntToArray = udf{(i: Int, arr: Seq[Double]) => arr :+ i.toDouble}
+      val pushLongToArray = udf{(i: Long, arr: Seq[Double]) => arr :+ i.toDouble}
+      val pushDoubleToArray = udf{(i: Double, arr: Seq[Double]) => arr :+ i}
+
+      val concatIntArray = udf{(ns: Seq[Int], arr: Seq[Double]) => arr ++ ns.map(_.toDouble)}
+      val concatLongArray = udf{(ns: Seq[Long], arr: Seq[Double]) => arr ++ ns.map(_.toDouble)}
+      val concatDoubleArray = udf{(ns: Seq[Double], arr: Seq[Double]) => arr ++ ns}
+
+      inputCols.tail.foldLeft(dfOut){ case(d,c) =>
         input.schema(c).dataType match {
           case IntegerType => d.withColumn(output, pushIntToArray(col(c), col(output)))
           case LongType => d.withColumn(output, pushLongToArray(col(c), col(output)))
           case DoubleType => d.withColumn(output, pushDoubleToArray(col(c), col(output)))
-          case ArrayType(IntegerType,_) => ???
-          case ArrayType(LongType,_) => ???
-          case ArrayType(DoubleType,_) => ???
+          case ArrayType(IntegerType,_) => d.withColumn(output, concatIntArray(col(c), col(output)))
+          case ArrayType(LongType,_) => d.withColumn(output, concatLongArray(col(c), col(output)))
+          case ArrayType(DoubleType,_) => d.withColumn(output, concatDoubleArray(col(c), col(output)))
         }
       }
-      ??? // TAOTODO:
     }
   }
 
