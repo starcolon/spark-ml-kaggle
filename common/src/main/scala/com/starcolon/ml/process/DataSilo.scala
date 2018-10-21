@@ -4,6 +4,7 @@ import org.apache.spark.sql.{SparkSession, Dataset, Row}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
+import org.apache.spark.ml.linalg.Vectors
 import com.starcolon.ml.{NumberUtils => NU}
 import com.starcolon.ml.DatasetUtils.litArray
 
@@ -341,6 +342,8 @@ object Silo {
       val concatLongArray = udf{(ns: Seq[Long], arr: Seq[Double]) => arr ++ ns.map(_.toDouble)}
       val concatDoubleArray = udf{(ns: Seq[Double], arr: Seq[Double]) => arr ++ ns}
 
+      val toMLVector = udf{(ns: Seq[Double]) => Vectors.dense(ns.toArray)}
+
       inputCols.tail.foldLeft(dfOut){ case(d,c) =>
         input.schema(c).dataType match {
           case IntegerType => d.withColumn(output, pushIntToArray(col(c), col(output)))
@@ -350,7 +353,7 @@ object Silo {
           case ArrayType(LongType,_) => d.withColumn(output, concatLongArray(col(c), col(output)))
           case ArrayType(DoubleType,_) => d.withColumn(output, concatDoubleArray(col(c), col(output)))
         }
-      }
+      }.withColumn(output, toMLVector(col(output)))
     }
   }
 

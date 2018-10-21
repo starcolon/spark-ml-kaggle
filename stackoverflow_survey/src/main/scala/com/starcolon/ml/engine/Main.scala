@@ -33,29 +33,38 @@ object SparkMain extends App with SparkBase with ModelColumns {
     .na.fill("Somewhat agree", "salary" :: Nil)
 
   println(CYAN)
-  val stringValueCols = Seq(
+  val featureColumns = Seq(
     "professional", "country", "formaleducation", "race", "majorundergrad",
-    "employmentstatus", "companysize", "yearscodedjob", "careersatisfaction", "salary", "expectedsalary"
+    "employmentstatus", "companysize", "yearscodedjob", "salary", "expectedsalary"
   )
+  val labelColumn = "careersatisfaction"
+  val stringValueCols = featureColumns :+ labelColumn
   dsInput.select("respondent", stringValueCols:_*).printLines(5)
   println(RESET)
 
   // Data processing recipes
   val recipes: Seq[DataSiloT] = 
     ReplaceNumericalValue("salary", Inplace, "Somewhat agree") +:
-    stringValueCols.map{c => OneHotEncode(c, Inplace)} :+
-    ComposeFeatureArray(stringValueCols, As("feature"))
+    featureColumns.map{c => OneHotEncode(c, Inplace)} :+
+    ComposeFeatureArray(featureColumns, As("feature")) :+
+    OneHotEncode(labelColumn, As("predict"))
 
   // Cook the data
   val dsPrepared = recipes $ dsInput
 
   println(GREEN)
-  dsPrepared.select("respondent", stringValueCols:_*).printLines(5)
+  dsPrepared.select("respondent", stringValueCols:_*).printLines(3)
   println(RESET)
 
-  println(MAGENTA)
-  dsPrepared.select("respondent", "feature").printLines(5)
+  println(GREEN)
+  dsPrepared.select("respondent", "feature", "predict").printLines(3)
   println(RESET)
+
+  println(CYAN)
+  println("Training models")
+  println(RESET)
+  val models = Classifier.DecisionTree :: Nil
+  val fitted = models.map(_.fit(dsPrepared))
 
   // Bis später!
   SparkSession.clearActiveSession()

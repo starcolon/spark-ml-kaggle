@@ -8,7 +8,7 @@ import org.apache.spark.ml.classification.{DecisionTreeClassifier,RandomForestCl
 
 trait ModelColumns {
   val predictionCol = "predict"
-  val featuresCol = "features"
+  val featuresCol = "feature"
 }
 
 object Classifier extends ModelColumns {
