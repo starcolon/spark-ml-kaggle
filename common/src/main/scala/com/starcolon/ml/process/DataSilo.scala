@@ -13,6 +13,10 @@ import scala.reflect.ClassTag
 import sys.process._
 import scala.util.{Try, Success, Failure}
 
+private case class KV(k: String, v: Double){
+  def + (another: KV) = KV(k, another.v + v)
+}
+
 sealed trait DataSiloT extends Serializable {
   def $(input: Dataset[_]): Dataset[_]
 }
@@ -168,6 +172,21 @@ object Silo {
     }
   }
 
+  case class PredefinedEncode[T: ClassTag](
+    inputCol: String,
+    as: OutputCol = OutputCol.Inplace,
+    map: Map[T, Int],
+    defaultOutput: Int)
+  extends DataSiloT {
+
+    override def $(input: Dataset[_]) = {
+      val out = getOutCol(inputCol, as)
+      val strMap = map.map{ case(k,v) => (k.toString,v)}
+      val mapper = udf{(v: String) => if (v==null) defaultOutput else strMap.getOrElse(v.trim(), defaultOutput)}
+      input.withColumn(out, mapper(col(inputCol).cast(StringType)))
+    }
+  }
+
   /**
    * Convert integer values to percentile
    */
@@ -307,6 +326,35 @@ object Silo {
         case LongType => input.withColumn(output, aggregator.udfLong(col(inputCol)))
         case DoubleType => input.withColumn(output, aggregator.udfDouble(col(inputCol)))
       }
+    }
+  }
+
+  // Add collector: exploring the possible values in each column
+  case class ExploreValues(inputCols: Seq[String]) extends DataSiloT {
+    override def $(input: Dataset[_]) = {
+
+      import input.sqlContext.implicits._
+
+      inputCols.foreach((c) => {
+        println
+        println("•" * 20)
+        println(s" ${c}")
+        println("•" * 20)
+
+        input
+          .select(col(c).cast(StringType).as("k"), lit(1D).as("v"))
+          .as[KV]
+          .rdd
+          .keyBy(_.k)
+          .reduceByKey(_ + _)
+          .map{ case(k,v) => v }
+          .sortBy(_.v, ascending=false)
+          .toDS
+          .show(25, false)
+      })
+
+
+      input
     }
   }
 
