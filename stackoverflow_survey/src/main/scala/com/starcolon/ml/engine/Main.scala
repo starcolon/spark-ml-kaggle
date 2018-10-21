@@ -90,11 +90,11 @@ object SparkMain extends App with SparkBase with ModelColumns {
 
   // Data processing recipes
   val recipes: Seq[DataSiloT] = (
-    ReplaceNumericalValue("salary", Inplace, "Somewhat agree") ::
+    ReplaceNumericalValue("salary", Inplace, value="Somewhat agree") ::
     ExploreValues("companysize" :: "careersatisfaction" :: "salary" :: Nil) ::
     onehotEncodedColumns.map{c => OneHotEncode(c, Inplace)}) :+
-    PredefinedEncode("companysize", Inplace, mapEncodeCompanySize, 0) :+
-    PredefinedEncode("salary", Inplace, mapEncodeSalary, 1) :+
+    PredefinedEncode("companysize", Inplace, mapEncodeCompanySize, defaultOutput=0) :+
+    PredefinedEncode("salary", Inplace, mapEncodeSalary, defaultOutput=1) :+
     ComposeFeatureArray(featureColumns, As("feature")) :+
     OneHotEncode(labelColumn, As("label"))
 
@@ -102,7 +102,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
   val dsPrepared = recipes $ dsInput
 
   println(GREEN)
-  dsPrepared.select("respondent", stringValueCols:_*).printLines(10)
+  dsPrepared.select("respondent", (stringValueCols :+ "label"):_*).printLines(10)
   println(RESET)
 
   println(GREEN)
