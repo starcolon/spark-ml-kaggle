@@ -106,7 +106,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
   println(RESET)
 
   println(GREEN)
-  dsPrepared.select("respondent", "feature", "label").printLines(3)
+  dsPrepared.select("respondent", "feature", "label").show(20)
   println(RESET)
 
   println(CYAN)
