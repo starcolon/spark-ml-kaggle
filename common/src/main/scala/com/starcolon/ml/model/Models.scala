@@ -6,6 +6,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.ml.{Pipeline,Estimator}
 import org.apache.spark.ml.classification.{DecisionTreeClassifier,RandomForestClassifier}
 
+import scala.util.Try
+
 trait ModelColumns {
   val predictionCol = "predict"
   val featuresCol = "feature"
@@ -37,6 +39,7 @@ object Classifier extends ModelColumns {
     .setPredictionCol(predictionCol)
     .setProbabilityCol(predictionCol + "_prob")
 
+  def getName(pl: Pipeline) = Try{ Some(pl.getStages.last.toString.split('@').head) } getOrElse(None)
   def all = Seq(XGBoost, DecisionTree, RandomForest, NaiveBayes)
   def allTreeBase = Seq(XGBoost, DecisionTree, RandomForest)
 }

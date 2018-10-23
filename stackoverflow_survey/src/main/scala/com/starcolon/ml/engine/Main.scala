@@ -5,6 +5,8 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.feature.ArrayEncoder
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
+import org.apache.spark.sql.functions._
 
 import Console.{CYAN,GREEN,YELLOW,RED,MAGENTA,RESET}
 
@@ -20,6 +22,7 @@ import com.starcolon.ml.model.{Classifier, ModelColumns}
 import com.starcolon.ml.process.Silo._
 import com.starcolon.ml.process.OutputCol._
 import com.starcolon.ml.process.Ops._
+import com.starcolon.ml.process.KV
 
 object SparkMain extends App with SparkBase with ModelColumns {
   import spark.implicits._
@@ -109,11 +112,28 @@ object SparkMain extends App with SparkBase with ModelColumns {
   dsPrepared.select("respondent", "feature", "label").show(20)
   println(RESET)
 
+  // TAOTODO: Split folds
+  val Array(training, test) = dsPrepared.randomSplit(Array(0.8, 0.2), seed = 55L)
+
   println(CYAN)
   println("Training models")
   println(RESET)
   val models = Classifier.DecisionTree :: Nil
-  val fitted = models.map(_.fit(dsPrepared))
+  val fitted = models.map{m => 
+    println(s"Training ${Classifier.getName(m)}")
+    val mfit = m.fit(training)
+    val dsVerify = mfit.transform(test)
+    val mapVerify = dsVerify.withColumn("k", 'feature === 'label)
+      .withColumn("v", lit(1D))
+      .as[KV]
+      .rdd.keyBy(_.k)
+      .reduceByKey(_ + _)
+      .collectAsMap
+
+    println(mapVerify)
+      
+    mfit
+  }
 
   // Bis später!
   SparkSession.clearActiveSession()

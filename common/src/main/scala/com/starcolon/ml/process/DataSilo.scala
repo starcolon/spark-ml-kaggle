@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
 import sys.process._
 import scala.util.{Try, Success, Failure}
 
-private case class KV(k: String, v: Double){
+case class KV(k: String, v: Double){
   def + (another: KV) = KV(k, another.v + v)
 }
 
