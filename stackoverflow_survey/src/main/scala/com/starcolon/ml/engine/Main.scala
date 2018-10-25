@@ -112,7 +112,6 @@ object SparkMain extends App with SparkBase with ModelColumns {
   dsPrepared.select("respondent", "feature", "label").show(20)
   println(RESET)
 
-  // TAOTODO: Split folds
   val Array(training, test) = dsPrepared.randomSplit(Array(0.8, 0.2), seed = 55L)
 
   println(CYAN)
@@ -123,7 +122,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
     println(s"Training ${Classifier.getName(m)}")
     val mfit = m.fit(training)
     val dsVerify = mfit.transform(test)
-    val mapVerify = dsVerify.withColumn("k", 'feature === 'label)
+    val mapVerify = dsVerify.withColumn("k", 'predict === 'label)
       .withColumn("v", lit(1D))
       .as[KV]
       .rdd.keyBy(_.k)
