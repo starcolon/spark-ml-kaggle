@@ -119,17 +119,24 @@ object SparkMain extends App with SparkBase with ModelColumns {
   println(RESET)
   val models = Classifier.DecisionTree :: Nil
   val fitted = models.map{m => 
-    println(s"Training ${Classifier.getName(m)}")
+    
     val mfit = m.fit(training)
     val dsVerify = mfit.transform(test)
-    val mapVerify = dsVerify.withColumn("k", 'predict === 'label)
+    val mapVerify = dsVerify.withColumn("k", when('predict === 'label, lit("TRUE")).otherwise(lit("FALSE")))
       .withColumn("v", lit(1D))
       .as[KV]
       .rdd.keyBy(_.k)
       .reduceByKey(_ + _)
+      .map{ case(k,kv) => (k,kv.v) }
       .collectAsMap
 
-    println(mapVerify)
+    val sum = mapVerify.values.sum.toDouble
+    val pos = mapVerify("TRUE").toDouble
+    val neg = mapVerify("FALSE").toDouble
+
+    val accuary = pos/sum    
+
+    println(GREEN + s"${Classifier.getName(m)} - accuary = $accuary" + RESET)
       
     mfit
   }
