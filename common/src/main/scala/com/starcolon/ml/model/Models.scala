@@ -25,7 +25,7 @@ object Classifier extends ModelColumns {
     .setFeaturesCol(featuresCol)
     .setImpurity("gini")
     .setMaxDepth(5)
-    .setMinInstancesPerNode(500)
+    .setMinInstancesPerNode(100)
     .setMaxBins(3)
     .setPredictionCol(predictionCol)
     .setProbabilityCol(predictionCol + "_prob")
@@ -35,11 +35,13 @@ object Classifier extends ModelColumns {
     .setImpurity("gini")
     .setMaxDepth(5)
     .setMaxBins(3)
-    .setMinInstancesPerNode(500)
+    .setMinInstancesPerNode(100)
     .setPredictionCol(predictionCol)
     .setProbabilityCol(predictionCol + "_prob")
 
-  def getName(pl: Pipeline) = Try{ Some(pl.getStages.last.toString.split('@').head) } getOrElse(None)
+  def getName(pl: Pipeline) = Try{ 
+    Some(pl.getStages.last.getClass.toString.split(' ').last) 
+  } getOrElse(None)
   def all = Seq(XGBoost, DecisionTree, RandomForest, NaiveBayes)
   def allTreeBase = Seq(XGBoost, DecisionTree, RandomForest)
 }

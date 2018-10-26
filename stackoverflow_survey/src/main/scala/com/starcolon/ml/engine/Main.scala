@@ -91,6 +91,8 @@ object SparkMain extends App with SparkBase with ModelColumns {
     "Agree" -> 1,
     "Strongly agree" -> 2)
 
+  // TAOTODO: Duplicate rows by degree of salary satisfactory
+
   // Data processing recipes
   val recipes: Seq[DataSiloT] = (
     ReplaceNumericalValue("salary", Inplace, value="Somewhat agree") ::
@@ -117,7 +119,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
   println(CYAN)
   println("Training models")
   println(RESET)
-  val models = Classifier.DecisionTree :: Nil
+  val models = Classifier.DecisionTree :: Classifier.RandomForest :: Nil
   val fitted = models.map{m => 
     
     val mfit = m.fit(training)
