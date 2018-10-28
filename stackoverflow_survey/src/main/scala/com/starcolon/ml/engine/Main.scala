@@ -5,8 +5,9 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.types._
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.feature.ArrayEncoder
-import org.apache.spark.mllib.evaluation.MulticlassMetrics
+import org.apache.spark.mllib.evaluation.{MulticlassMetrics,BinaryClassificationMetrics}
 import org.apache.spark.sql.functions._
+import org.apache.spark.mllib.regression.LabeledPoint
 
 import Console.{CYAN,GREEN,YELLOW,RED,MAGENTA,RESET}
 
@@ -91,7 +92,7 @@ object SparkMain extends App with SparkBase with ModelColumns {
     "Agree" -> 1,
     "Strongly agree" -> 2)
 
-  // TAOTODO: Duplicate rows by degree of salary satisfactory
+  val genArray = udf{n: Int => Seq.fill(Math.abs(n))(0)}
 
   // Data processing recipes
   val recipes: Seq[DataSiloT] = (
@@ -104,7 +105,10 @@ object SparkMain extends App with SparkBase with ModelColumns {
     OneHotEncode(labelColumn, As("label"))
 
   // Cook the data
-  val dsPrepared = recipes $ dsInput
+  // Also duplicate rows by degree of salary satisfactory
+  val dsPrepared = (recipes $ dsInput)
+    .withColumn("n", explode(genArray('salary)))
+    .withColumn("salary", when('salary > 0, lit(1D)).otherwise(lit(-1D)))
 
   println(GREEN)
   dsPrepared.select("respondent", (stringValueCols :+ "label"):_*).printLines(10)
@@ -120,25 +124,36 @@ object SparkMain extends App with SparkBase with ModelColumns {
   println("Training models")
   println(RESET)
   val models = Classifier.DecisionTree :: Classifier.RandomForest :: Nil
-  val fitted = models.map{m => 
+  val fitted = models.map{ m => 
     
     val mfit = m.fit(training)
     val dsVerify = mfit.transform(test)
-    val mapVerify = dsVerify.withColumn("k", when('predict === 'label, lit("TRUE")).otherwise(lit("FALSE")))
-      .withColumn("v", lit(1D))
-      .as[KV]
-      .rdd.keyBy(_.k)
-      .reduceByKey(_ + _)
-      .map{ case(k,kv) => (k,kv.v) }
-      .collectAsMap
 
-    val sum = mapVerify.values.sum.toDouble
-    val pos = mapVerify("TRUE").toDouble
-    val neg = mapVerify("FALSE").toDouble
+    val metrics = new BinaryClassificationMetrics(dsVerify.rdd.map{
+      row => (
+        row.getAs[Double]("predict"),
+        row.getAs[Int]("label").toDouble)
+    })
 
-    val accuary = pos/sum    
+    val auc = metrics.areaUnderPR
 
-    println(GREEN + s"${Classifier.getName(m)} - accuary = $accuary" + RESET)
+    println(GREEN + s"${Classifier.getName(m)} - auc : $auc")
+
+    // val mapVerify = dsVerify.withColumn("k", when('predict === 'label, lit("TRUE")).otherwise(lit("FALSE")))
+    //   .withColumn("v", lit(1D))
+    //   .as[KV]
+    //   .rdd.keyBy(_.k)
+    //   .reduceByKey(_ + _)
+    //   .map{ case(k,kv) => (k,kv.v) }
+    //   .collectAsMap
+
+    // val sum = mapVerify.values.sum.toDouble
+    // val pos = mapVerify("TRUE").toDouble
+    // val neg = mapVerify("FALSE").toDouble
+
+    // val accuary = pos/sum    
+
+    // println(GREEN + s"${Classifier.getName(m)} - accuary = $accuary" + RESET)
       
     mfit
   }
